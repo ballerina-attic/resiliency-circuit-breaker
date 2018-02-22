@@ -6,7 +6,12 @@ import ballerina.net.http;
 
 @http:configuration {basePath:"/order"}
 service<http> orderService {
+    // The resilient HTTP endpoint is defined including the  Circuit Breaker pattern
     endpoint<resiliency:CircuitBreaker> circuitBreakerEP {
+        // The Circuit Breaker should be initialized with HTTP Client, failure threshold and reset timeout
+        // HTTP client could be any HTTP endpoint that have risk of failure
+        // Failure threshold should be 0 and 1
+        // reset timeout for circuit breaker should be in milliseconds
         create resiliency:CircuitBreaker(create http:HttpClient("http://localhost:9092", null), 0.2, 20000);
     }
 
