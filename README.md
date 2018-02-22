@@ -111,14 +111,14 @@ service<http> orderService {
 
 ```
 
-Please refer `ballerina-guides/resiliency-circuit-breaker/orderService/order_service.bal` file for the complete implementaion of orderService.
+Please refer `ballerina-guides/resiliency-circuit-breaker/orderServices/order_service.bal` file for the complete implementaion of orderService.
 
 
 #### inventory_service.bal 
 The inventory management service is a simple web service which is used to mock inventory management. This service 
 will send the following JSON message to any request. 
 ```json
-{"Status":"Order Available in Inventory",   "items":<requested items>"}
+{"Status":"Order Available in Inventory",   "items":requested items list"}
 ```
 Please find the implementation of the inventory management service in `ballerina-guides/resiliency-circuit-breaker/inventoryServices/inventory_service.bal`
 
