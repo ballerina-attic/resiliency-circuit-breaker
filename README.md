@@ -54,7 +54,7 @@ The `inventoryServices` is an independent web service that accepts orders via HT
 ### Develop the Ballerina services
 
 #### order_service.bal
-Ballerina language has built-in support for writing web services. The `service` keyword in ballerina simply defines a web service. Inside the service block, we can have all the required resources. You can define a resource using `resource` keyword in Ballerina. We can implement the business logic inside a resource block using Ballerina language syntaxes. The `ballerina.net.http.resiliency` package contains the Circuit Breaker implementation. After importing that package you can directly create an endpoint with a circuit breaker. The `endpoint` keyword in ballerina refers to a connection with remote service. You can pass the `HTTP Client`, `Failure Threshold` and `Reset Timeout` to the circuit breaker. The `circuitBreakerEP` is the reference for the HTTP endpoint with the circuit breaker. Whenever you call that remote HTTP endpoint it will go through the circuit breaker. 
+The `ballerina.net.http.resiliency` package contains the Circuit Breaker implementation. After importing that package you can directly create an endpoint with a circuit breaker. The `endpoint` keyword in ballerina refers to a connection with remote service. You can pass the `HTTP Client`, `Failure Threshold` and `Reset Timeout` to the circuit breaker. The `circuitBreakerEP` is the reference for the HTTP endpoint with the circuit breaker. Whenever you call that remote HTTP endpoint it will go through the circuit breaker. 
 
 ```ballerina
 package orderServices;
@@ -115,35 +115,13 @@ Please refer `ballerina-guides/resiliency-circuit-breaker/orderService/order_ser
 
 
 #### inventory_service.bal 
-This is the inventory management service that we use to demonstrate the circuit breaker scenario. The mock inventory management service will send the response to any request saying that the items are available in the inventory.
-
-```ballerina 
-package inventoryStore;
-
-import ballerina.log;
-import ballerina.net.http;
-
-@http:configuration {basePath:"/inventory", port:9092}
-service<http> inventoryService {
-    @http:resourceConfig {
-        methods:["POST"],
-        path:"/"
-    }
-    resource inventoryResource (http:Connection httpConnection, http:InRequest request) {
-        // Initialize the response message that needs to send back to callee
-        http:OutResponse response = {};
-        // Extract the items list from the request JSON payload
-        json items = request.getJsonPayload();
-        log:printInfo("Checking the order items : " + items.toString());
-        // Prepare the response message
-        json responseJson = {"Status":"Order Available in Inventory", "items":items};
-        response.setJsonPayload(responseJson);
-        // Send the response to the callee
-        _ = httpConnection.respond(response);
-    }
-}
-
+The inventory management service is a simple web service which is used to mock inventory management. This service 
+will send the following JSON message to any request. 
+```json
+{"Status":"Order Available in Inventory",   "items":<requested items>"}
 ```
+Please find the implementation of the inventory management service in `ballerina-guides/resiliency-circuit-breaker/inventoryServices/inventory_service.bal`
+
 ### Try it out
 
 1. Run both the orderService and inventoryService by entering the following commands in sperate terminals
