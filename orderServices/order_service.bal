@@ -6,7 +6,8 @@ import ballerina.net.http;
 
 @http:configuration {basePath:"/order"}
 service<http> orderService {
-    // The resilient HTTP endpoint is defined including the  Circuit Breaker pattern
+    // The CircuitBreaker parameter defines an endpoint with circuit breaker pattern
+    // Circuit breaker will immediately drop remote calls if the endpoint exceeded the failure threshold
     endpoint<resiliency:CircuitBreaker> circuitBreakerEP {
         // The Circuit Breaker should be initialized with HTTP Client, failure threshold and reset timeout
         // HTTP client could be any HTTP endpoint that have risk of failure
