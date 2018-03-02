@@ -23,21 +23,18 @@ backend fails. For better understanding we will map this with real world scenari
 ## <a name="pre-req"></a> Prerequisites
  
 - JDK 1.8 or later
-- Ballerina Distribution (Install Instructions:  https://ballerinalang.org/docs/quick-tour/quick-tour/#install-ballerina)
+- [Ballerina Distribution](https://ballerinalang.org/docs/quick-tour/quick-tour/#install-ballerina)
 - A Text Editor or an IDE 
 
-Optional Requirements
-- Docker (Refer: https://docs.docker.com/engine/installation/)
-- Ballerina IDE plugins. ( Intellij IDEA, VSCode, Atom)
-- Testerina (Refer: https://github.com/ballerinalang/testerina)
-- Container-support (Refer: https://github.com/ballerinalang/container-support)
-- Docerina (Refer: https://github.com/ballerinalang/docerina)
+Optional requirements
+- Ballerina IDE plugins. ( [IntelliJ IDEA](https://plugins.jetbrains.com/plugin/9520-ballerina), [VSCode](https://marketplace.visualstudio.com/items?itemName=WSO2.Ballerina), [Atom](https://atom.io/packages/language-ballerina))
+- [Docker](https://docs.docker.com/engine/installation/)
 
-## <a name="developing-service"></a> Develop the RESTFul service with circuit breaker
+## <a name="developing-service"></a> Developing the RESTFul service with circuit breaker
 
 ### Before you begin
 
-##### Understand the package structure
+#### Understand the package structure
 Ballerina is a complete programming language that can have any custom project structure as you wish. Although language allows you to have any package structure, we'll stick with the following package structure for this project.
 
 ```
@@ -53,7 +50,7 @@ The `orderServices` is the service that handles the client orders. Order service
 
 The `inventoryServices` is an independent web service that accepts orders via HTTP POST method from `orderService` and sends the availability of order items.
 
-### Develop the Ballerina services
+### Implementation of the Ballerina services
 
 #### order_service.bal
 The `ballerina.net.http.resiliency` package contains the Circuit Breaker implementation. After importing that package you can directly create an endpoint with a circuit breaker. The `endpoint` keyword in ballerina refers to a connection with remote service. You can pass the `HTTP Client`, `Failure Threshold` and `Reset Timeout` to the circuit breaker. The `circuitBreakerEP` is the reference for the HTTP endpoint with the circuit breaker. Whenever you call that remote HTTP endpoint it will go through the circuit breaker. 
@@ -131,6 +128,9 @@ will send the following JSON message to any request.
 ```
 Please find the implementation of the inventory management service in `ballerina-guides/resiliency-circuit-breaker/inventoryServices/inventory_service.bal`
 
+## <a name="testing"></a> Testing 
+
+
 ### Try it out
 
 1. Run both the orderService and inventoryService by entering the following commands in sperate terminals
@@ -176,9 +176,8 @@ Please find the implementation of the inventory management service in `ballerina
    unavailable. Requests to upstream service will be suspended for 14451 milliseconds."}
    ```
 
-## <a name="testing"></a> Testing 
 
-### <a name="unit-testing"></a> Writing Unit Tests 
+### <a name="unit-testing"></a> Writing unit tests 
 
 In ballerina, the unit test cases should be in the same package and the naming convention should be as follows,
 * Test files should contain _test.bal suffix.
@@ -199,7 +198,7 @@ $ ballerina test inventoryServices/
 
 Once you are done with the development, you can deploy the service using any of the methods that we listed below. 
 
-### <a name="deploying-on-locally"></a> Deploying Locally
+### <a name="deploying-on-locally"></a> Deploying locally
 You can deploy the RESTful service that you developed above, in your local environment. You can use the Ballerina executable archive (.balx) archive that we created above and run it in your local environment as follows. 
 
 ```
