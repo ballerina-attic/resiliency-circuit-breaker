@@ -67,7 +67,7 @@ service<http> orderService {
     // The CircuitBreaker parameter defines an endpoint with circuit breaker pattern
     // Circuit breaker will immediately drop remote calls if the endpoint exceeded the failure threshold
     endpoint<resiliency:CircuitBreaker> circuitBreakerEP {
-        // The Circuit Breaker should be initialized with HTTP Client, failure threshold and reset timeout
+        // Circuit Breaker should be initialized with HTTP Client, failure threshold and reset timeout
         // HTTP client could be any HTTP endpoint that have risk of failure
         // Failure threshold should be 0 and 1
         // reset timeout for circuit breaker should be in milliseconds
@@ -117,7 +117,7 @@ service<http> orderService {
 
 ```
 
-Please refer `ballerina-guides/resiliency-circuit-breaker/orderServices/order_service.bal` file for the complete implementaion of orderService.
+Please refer `resiliency-circuit-breaker/orderServices/order_service.bal` file for the complete implementaion of orderService.
 
 
 #### inventory_service.bal 
@@ -126,20 +126,20 @@ will send the following JSON message to any request.
 ```json
 {"Status":"Order Available in Inventory",   "items":"requested items list"}
 ```
-Please find the implementation of the inventory management service in `ballerina-guides/resiliency-circuit-breaker/inventoryServices/inventory_service.bal`
+Please find the implementation of the inventory management service in `resiliency-circuit-breaker/inventoryServices/inventory_service.bal`
 
 ## <a name="testing"></a> Testing 
 
 
 ### Try it out
 
-1. Run both the orderService and inventoryService by entering the following commands in sperate terminals
+1. Run both the orderService and inventoryService by entering the following commands in sperate terminals from sample root directory
     ```bash
-    <SAMPLE_ROOT_DIRECTORY>$ ballerina run inventoryServices/
+    $ ballerina run inventoryServices/
    ```
 
    ```bash
-   <SAMPLE_ROOT_DIRECTORY>$ ballerina run orderServices/
+   $ ballerina run orderServices/
    ```
 
 2. Then invoke the orderService by sending an order via HTTP POST method. 
@@ -202,12 +202,12 @@ Once you are done with the development, you can deploy the service using any of 
 You can deploy the RESTful service that you developed above, in your local environment. You can use the Ballerina executable archive (.balx) archive that we created above and run it in your local environment as follows. 
 
 ```
-ballerina run orderServices.balx 
+$ ballerina run orderServices.balx 
 ```
 
 
 ```
-ballerina run inventoryServices.balx 
+$ ballerina run inventoryServices.balx 
 ```
 
 ### <a name="deploying-on-docker"></a> Deploying on Docker
