@@ -95,12 +95,12 @@ service<http> orderService {
         // Initialize the response message to send back to the client
         http:InResponse inResponse = {};
         http:HttpConnectorError err;
-        // Extract the items from the json payload
+        // Extract the items from the JSON payload
         json items = request.getJsonPayload().items;
-        // Send bad request message to the client if request don't contain items JSON
+        // Send bad request message to the client if the request does not contain items JSON
         if (items == null) {
-            outResponse.setStringPayload("Error : Please check the input json payload");
-            // set the response code as 400 to indicate a bad request
+            outResponse.setStringPayload("Error: Please check the input JSON payload");
+            // Set the response code as 400 to indicate a bad request
             outResponse.statusCode = 400;
             _ = httpConnection.respond(outResponse);
             return;
@@ -110,9 +110,9 @@ service<http> orderService {
         outRequest.setJsonPayload(items);
         // Call the inventory backend with the item list
         inResponse, err = circuitBreakerEP.post("/inventory", outRequest);
-        // If inventory backend contain errors forward the error message to client
+        // If inventory backend contains errors, forward the error message to the client
         if (err != null) {
-            log:printInfo("Inventory service returns an error :" + err.msg);
+            log:printInfo("Inventory service returns an error:" + err.msg);
             outResponse.setJsonPayload({"Error":"Inventory Service did not respond",
             "Error_message":err.msg});
             _ = httpConnection.respond(outResponse);
@@ -126,7 +126,7 @@ service<http> orderService {
 
 ```
 
-Please refer `resiliency-circuit-breaker/orderServices/order_service.bal` file for the complete implementaion of orderService.
+Please refer to the [resiliency-circuit-breaker/orderServices/order_service.bal](/orderServices/order_service.bal) file for the complete implementaion of the orderService.
 
 
 #### inventory_service.bal 
