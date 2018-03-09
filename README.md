@@ -32,7 +32,7 @@ You’ll build a web service that uses the Circuit Breaker pattern to gracefully
 ## <a name="pre-req"></a> Prerequisites
  
 - JDK 1.8 or later
-- [Ballerina Distribution](https://ballerinalang.org/docs/quick-tour/quick-tour/#install-ballerina)
+- [Ballerina Distribution](https://github.com/ballerina-lang/ballerina/blob/master/docs/quick-tour.md)
 - A Text Editor or an IDE 
 
 ### Optional requirements
@@ -62,7 +62,7 @@ The `inventoryServices` is an independent web service that accepts orders via HT
 ### Implementation of the Ballerina services
 
 #### order_service.bal
-The `ballerina.net.http.resiliency` package contains the Circuit Breaker implementation. After importing that package you can directly create an endpoint with a circuit breaker. The `endpoint` keyword in ballerina refers to a connection with remote service. You can pass the `HTTP Client`, `Failure Threshold` and `Reset Timeout` to the circuit breaker. The `circuitBreakerEP` is the reference for the HTTP endpoint with the circuit breaker. Whenever you call that remote HTTP endpoint it will go through the circuit breaker. 
+The `ballerina.net.http.resiliency` package contains the circuit breaker implementation. After importing that package you can directly create an endpoint with a circuit breaker. The `endpoint` keyword in Ballerina refers to a connection with a remote service. You can pass the `HTTP Client`, `Failure Threshold` and `Reset Timeout` to the circuit breaker. The `circuitBreakerEP` is the reference for the HTTP endpoint with the circuit breaker. Whenever you call that remote HTTP endpoint, it goes through the circuit breaker. 
 
 ```ballerina
 package orderServices;
@@ -73,13 +73,13 @@ import ballerina.net.http;
 
 @http:configuration {basePath:"/order"}
 service<http> orderService {
-    // The CircuitBreaker parameter defines an endpoint with circuit breaker pattern
-    // Circuit breaker will immediately drop remote calls if the endpoint exceeded the failure threshold
+    // The CircuitBreaker parameter defines an endpoint with the circuit breaker pattern
+    // The circuit breaker immediately drop remote calls if the endpoint exceeds the failure threshold
     endpoint<resiliency:CircuitBreaker> circuitBreakerEP {
         // Circuit Breaker should be initialized with HTTP Client, failure threshold and reset timeout
-        // HTTP client could be any HTTP endpoint that have risk of failure
+        // HTTP client could be any HTTP endpoint that has risk of failure
         // Failure threshold should be 0 and 1
-        // reset timeout for circuit breaker should be in milliseconds
+        // The reset timeout for the circuit breaker should be in milliseconds
         create resiliency:CircuitBreaker(create http:HttpClient("http://localhost:9092", null),
                                          0.2, 20000);
     }
@@ -92,7 +92,7 @@ service<http> orderService {
         // Initialize the request and response message to send to the inventory service
         http:OutResponse outResponse = {};
         http:OutRequest outRequest = {};
-        // Initialize the response message to send back to client
+        // Initialize the response message to send back to the client
         http:InResponse inResponse = {};
         http:HttpConnectorError err;
         // Extract the items from the json payload
