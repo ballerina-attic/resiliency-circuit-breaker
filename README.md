@@ -1,11 +1,20 @@
 # Circuit Breaker
-This guide walks you through the process of adding [Circuit Breaker pattern](https://martinfowler.com/bliki/CircuitBreaker.html) to potentially-failing remote backend. 
-Circuit Breaker pattern is a way to automatically degrade functionality when remote services fail. Use of the Circuit Breaker pattern can allow a web service to continue operating without waiting for unresponsive remote services.
+The [circuit breaker pattern](https://martinfowler.com/bliki/CircuitBreaker.html) is a way to automatically degrade functionality when remote services fail. When you use the circuit breaker pattern, you can allow a web service to continue operating without waiting for unresponsive remote services.
+
+> This guide walks you through the process of adding a circuit breaker pattern to a potentially-failing remote backend. 
+
+The following are the sections available in this guide.
+
+- [What you'll build](#what-you-build)
+- [Prerequisites](#pre-req)
+- [Developing the RESTFul service with circuit breaker](#developing-service)
+- [Testing](#testing)
+- [Deployment](#deploying-the-scenario)
+- [Observability](#observability)
 
 ## <a name="what-you-build"></a>  What you'll build
 
-You’ll build a web service that uses the Circuit Breaker pattern to gracefully degrade functionality when a remorte 
-backend fails. For better understanding we will map this with real world scenario of an order processing service of a retail store. The retail store uses potentially-failing remote backend for inventory management. When a specific order comes to the order processing service, the service will call the inventory management service to check the availability of items.
+You’ll build a web service that uses the Circuit Breaker pattern to gracefully degrade functionality when a remorte backend fails. To understand this better, you'll be mapping this with a real world scenario of an order processing service of a retail store. The retail store uses potentially-failing remote backend for inventory management. When a specific order comes to the order processing service, the service calls the inventory management service to check the availability of items.
 
 &nbsp;
 &nbsp;
@@ -18,7 +27,7 @@ backend fails. For better understanding we will map this with real world scenari
 &nbsp;
 &nbsp;
 
-- **Place orders through retail store** : To place a new order you can use the HTTP POST message that contains the order details
+- **Place orders through retail store**: To place a new order you can use the HTTP POST message that contains the order details
 
 ## <a name="pre-req"></a> Prerequisites
  
@@ -26,8 +35,8 @@ backend fails. For better understanding we will map this with real world scenari
 - [Ballerina Distribution](https://ballerinalang.org/docs/quick-tour/quick-tour/#install-ballerina)
 - A Text Editor or an IDE 
 
-Optional requirements
-- Ballerina IDE plugins. ( [IntelliJ IDEA](https://plugins.jetbrains.com/plugin/9520-ballerina), [VSCode](https://marketplace.visualstudio.com/items?itemName=WSO2.Ballerina), [Atom](https://atom.io/packages/language-ballerina))
+### Optional requirements
+- Ballerina IDE plugins. ([IntelliJ IDEA](https://plugins.jetbrains.com/plugin/9520-ballerina), [VSCode](https://marketplace.visualstudio.com/items?itemName=WSO2.Ballerina), [Atom](https://atom.io/packages/language-ballerina))
 - [Docker](https://docs.docker.com/engine/installation/)
 
 ## <a name="developing-service"></a> Developing the RESTFul service with circuit breaker
@@ -35,7 +44,7 @@ Optional requirements
 ### Before you begin
 
 #### Understand the package structure
-Ballerina is a complete programming language that can have any custom project structure as you wish. Although language allows you to have any package structure, we'll stick with the following package structure for this project.
+Ballerina is a complete programming language that can have any custom project structure that you wish. Although the language allows you to have any package structure, use the following package structure for this project to follow this guide.
 
 ```
 ├── orderServices
