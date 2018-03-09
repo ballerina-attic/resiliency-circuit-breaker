@@ -21,7 +21,7 @@ You’ll build a web service that uses the Circuit Breaker pattern to gracefully
 &nbsp;
 &nbsp;
 
-![alt text](../images/circuit_breaker_image.png)
+![alt text](../resiliency-circuit-breaker/images/circuit_breaker_image.png)
 
 &nbsp;
 &nbsp;
