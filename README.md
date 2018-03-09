@@ -130,12 +130,11 @@ Please refer to the [resiliency-circuit-breaker/orderServices/order_service.bal]
 
 
 #### inventory_service.bal 
-The inventory management service is a simple web service which is used to mock inventory management. This service 
-will send the following JSON message to any request. 
+The inventory management service is a simple web service that is used to mock inventory management. This service sends the following JSON message to any request. 
 ```json
 {"Status":"Order Available in Inventory",   "items":"requested items list"}
 ```
-Please find the implementation of the inventory management service in `resiliency-circuit-breaker/inventoryServices/inventory_service.bal`
+Please find the implementation of the inventory management service in [resiliency-circuit-breaker/inventoryServices/inventory_service.bal](/inventoryServices/inventory_service.bal)
 
 ## <a name="testing"></a> Testing 
 
