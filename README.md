@@ -27,7 +27,7 @@ You’ll build a web service that uses the Circuit Breaker pattern to gracefully
 &nbsp;
 &nbsp;
 
-- **Place orders through retail store**: To place a new order you can use the HTTP POST message that contains the order details
+**Place orders through retail store**: To place a new order you can use the HTTP POST message that contains the order details
 
 ## <a name="pre-req"></a> Prerequisites
  
@@ -36,7 +36,7 @@ You’ll build a web service that uses the Circuit Breaker pattern to gracefully
 - A Text Editor or an IDE 
 
 ### Optional requirements
-- Ballerina IDE plugins. ([IntelliJ IDEA](https://plugins.jetbrains.com/plugin/9520-ballerina), [VSCode](https://marketplace.visualstudio.com/items?itemName=WSO2.Ballerina), [Atom](https://atom.io/packages/language-ballerina))
+- Ballerina IDE plugins ([IntelliJ IDEA](https://plugins.jetbrains.com/plugin/9520-ballerina), [VSCode](https://marketplace.visualstudio.com/items?itemName=WSO2.Ballerina), [Atom](https://atom.io/packages/language-ballerina))
 - [Docker](https://docs.docker.com/engine/installation/)
 
 ## <a name="developing-service"></a> Developing the RESTFul service with circuit breaker
