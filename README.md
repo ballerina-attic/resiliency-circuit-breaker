@@ -21,7 +21,7 @@ You’ll build a web service that uses the Circuit Breaker pattern to gracefully
 &nbsp;
 &nbsp;
 
-![alt text](https://github.com/rosensilva/ballerina-samples/blob/master/circuit-breaker/images/circuit_breaker_image.png)
+![alt text](../images/circuit_breaker_image.png)
 
 &nbsp;
 &nbsp;
