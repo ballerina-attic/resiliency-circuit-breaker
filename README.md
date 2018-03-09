@@ -126,7 +126,7 @@ service<http> orderService {
 
 ```
 
-Please refer to the [resiliency-circuit-breaker/orderServices/order_service.bal](/orderServices/order_service.bal) file for the complete implementaion of the orderService.
+Refer to the complete implementaion of the orderService in the [resiliency-circuit-breaker/orderServices/order_service.bal](/orderServices/order_service.bal) file.
 
 
 #### inventory_service.bal 
@@ -134,14 +134,14 @@ The inventory management service is a simple web service that is used to mock in
 ```json
 {"Status":"Order Available in Inventory",   "items":"requested items list"}
 ```
-Please find the implementation of the inventory management service in [resiliency-circuit-breaker/inventoryServices/inventory_service.bal](/inventoryServices/inventory_service.bal)
+Refer to the complete implementation of the inventory management service in the [resiliency-circuit-breaker/inventoryServices/inventory_service.bal](/inventoryServices/inventory_service.bal) file.
 
 ## <a name="testing"></a> Testing 
 
 
 ### Try it out
 
-1. Run both the orderService and inventoryService by entering the following commands in sperate terminals from sample root directory
+1. Run both the orderService and inventoryService by entering the following commands in sperate terminals from the sample root directory.
     ```bash
     $ ballerina run inventoryServices/
    ```
@@ -150,35 +150,35 @@ Please find the implementation of the inventory management service in [resilienc
    $ ballerina run orderServices/
    ```
 
-2. Then invoke the orderService by sending an order via HTTP POST method. 
+2. Invoke the orderService by sending an order via the HTTP POST method. 
    ``` bash
    curl -v -X POST -d '{ "items":{"1":"Basket","2": "Table","3": "Chair"}}' \
    "http://localhost:9090/order" -H "Content-Type:application/json"
    ```
-   The order service should respond something similar,
+   The order service sends a response similar to the following:
    ```
    Order Placed : {"Status":"Order Available in Inventory", \ 
    "items":{"1":"Basket","2":"Table","3":"Chair"}}
    ```
-3. Now shutdown the inventory service. Our order service will now have a broken remote endpoint for inventory service.
+3. Shutdown the inventory service. Your order service now has a broken remote endpoint for the inventory service.
 
-4. Then invoke the orderService by sending an order via HTTP method.
+4. Invoke the orderService by sending an order via HTTP method.
    ``` bash
    curl -v -X POST -d '{ "items":{"1":"Basket","2": "Table","3": "Chair"}}' \ 
    "http://localhost:9090/order" -H "Content-Type
    ```
-   The order service should respond something similar,
+   The order service sends a response similar to the following:
    ```json
    {"Error":"Inventory Service did not respond","Error_message":"Connection refused, localhost-9092"}
    ```
-   This shows that the order service did try to call the inventory service and found that inventory service is not available.
+   This shows that the order service attempted to call the inventory service and found that the inventory service is not available.
 
-5. Now invoke the orderService again soon after sending the previous request.
+5. Invoke the orderService again soon after sending the previous request.
    ``` bash
    curl -v -X POST -d '{ "items":{"1":"Basket","2": "Table","3": "Chair"}}' \ 
    "http://localhost:9090/order" -H "Content-Type
    ```
-   Now the Circuit Breaker should be activated since the order service knows that the inventory service is unavailable. This    time the order service should respond with the following error message.
+   Now the Circuit Breaker is activated since the order service knows that the inventory service is unavailable. This time the order service responds with the following error message.
    ```json
    {"Error":"Inventory Service did not respond","Error_message":"Upstream service
    unavailable. Requests to upstream service will be suspended for 14451 milliseconds."}
@@ -187,10 +187,10 @@ Please find the implementation of the inventory management service in [resilienc
 
 ### <a name="unit-testing"></a> Writing unit tests 
 
-In ballerina, the unit test cases should be in the same package and the naming convention should be as follows,
-* Test files should contain _test.bal suffix.
-* Test functions should contain test prefix.
-  * e.g.: testOrderService()
+In Ballerina, the unit test cases should be in the same package and the naming convention should be as follows,
+* Test files should contain the _test.bal suffix.
+* Test functions should contain the test prefix.
+  * e.g., testOrderService()
 
 This guide contains unit test cases in the respective folders. The two test cases are written to test the `orderServices` and the `inventoryStores` service.
 To run the unit tests, go to the sample root directory and run the following command
@@ -204,10 +204,10 @@ $ ballerina test inventoryServices/
 
 ## <a name="deploying-the-scenario"></a> Deployment
 
-Once you are done with the development, you can deploy the service using any of the methods that we listed below. 
+Once you are done with the development, you can deploy the service using any of the methods listed below. 
 
 ### <a name="deploying-on-locally"></a> Deploying locally
-You can deploy the RESTful service that you developed above, in your local environment. You can use the Ballerina executable archive (.balx) archive that we created above and run it in your local environment as follows. 
+You can deploy the RESTful service that you developed above in your local environment. You can use the Ballerina executable archive (.balx) that you created above and run it in your local environment as follows. 
 
 ```
 $ ballerina run orderServices.balx 
