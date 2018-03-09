@@ -14,14 +14,14 @@ The following are the sections available in this guide.
 
 ## <a name="what-you-build"></a>  What you'll build
 
-You’ll build a web service that uses the Circuit Breaker pattern to gracefully degrade functionality when a remorte backend fails. To understand this better, you'll be mapping this with a real world scenario of an order processing service of a retail store. The retail store uses potentially-failing remote backend for inventory management. When a specific order comes to the order processing service, the service calls the inventory management service to check the availability of items.
+You’ll build a web service that uses the Circuit Breaker pattern to gracefully degrade functionality when a remorte backend fails. To understand this better, you'll be mapping this with a real world scenario of an order processing service of a retail store. The retail store uses a potentially-failing remote backend for inventory management. When a specific order comes to the order processing service, the service calls the inventory management service to check the availability of items.
 
 &nbsp;
 &nbsp;
 &nbsp;
 &nbsp;
 
-![alt text](../circuit_breaker_image.png)
+![Circuit breaker ](images/circuit_breaker_image.png)
 
 &nbsp;
 &nbsp;
