@@ -16,25 +16,30 @@
 
 package inventoryServices;
 
-import ballerina.log;
-import ballerina.net.http;
+import ballerina/log;
+import ballerina/net.http;
 
-@http:configuration {basePath:"/inventory", port:9092}
-service<http> inventoryService {
-    @http:resourceConfig {
+
+endpoint http:ServiceEndpoint inventoryEP {
+    port:9092
+};
+
+@http:ServiceConfig {basePath:"/inventory"}
+service<http:Service> inventoryService bind inventoryEP {
+    @http:ResourceConfig {
         methods:["POST"],
         path:"/"
     }
-    resource inventoryResource (http:Connection httpConnection, http:InRequest request) {
+    inventoryResource (endpoint httpConnection, http:Request request) {
         // Initialize the response message that needs to send back to client
-        http:OutResponse response = {};
+        http:Response response = {};
         // Extract the items list from the request JSON payload
-        json items = request.getJsonPayload();
+        json items =? <json>request.getJsonPayload();
         log:printInfo("Checking the order items : " + items.toString());
         // Prepare the response message
         json responseJson = {"Status":"Order Available in Inventory", "items":items};
         response.setJsonPayload(responseJson);
         // Send the response to the client
-        _ = httpConnection.respond(response);
+        _ = httpConnection -> respond(response);
     }
 }
