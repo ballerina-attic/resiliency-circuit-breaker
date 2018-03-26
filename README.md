@@ -47,12 +47,17 @@ You’ll build a web service that uses the Circuit Breaker pattern to gracefully
 Ballerina is a complete programming language that can have any custom project structure that you wish. Although the language allows you to have any package structure, use the following package structure for this project to follow this guide.
 
 ```
-├── orderServices
-│   ├── order_service.bal
-│   └── order_service_test.bal
-└── inventoryServices
-    ├── inventory_service.bal
-    └── inventory_service_test.bal
+├── integrationTests
+│   └── integration_test.bal
+├── inventoryServices
+│   ├── inventory_service.bal
+│   └── tests
+│       └── inventory_service_test.bal
+└── orderServices
+    ├── order_service.bal
+    └── tests
+        └── order_service_test.bal
+
 ```
 
 The `orderServices` is the service that handles the client orders. Order service is configured with a circuit breaker to deal with the potentially-failing remote inventory management service.  
@@ -62,68 +67,97 @@ The `inventoryServices` is an independent web service that accepts orders via HT
 ### Implementation of the Ballerina services
 
 #### order_service.bal
-The `ballerina.net.http.resiliency` package contains the circuit breaker implementation. After importing that package you can directly create an endpoint with a circuit breaker. The `endpoint` keyword in Ballerina refers to a connection with a remote service. You can pass the `HTTP Client`, `Failure Threshold` and `Reset Timeout` to the circuit breaker. The `circuitBreakerEP` is the reference for the HTTP endpoint with the circuit breaker. Whenever you call that remote HTTP endpoint, it goes through the circuit breaker. 
+The `ballerina.net.http` package contains the circuit breaker implementation. After importing that package you can directly create an endpoint with a circuit breaker. The `endpoint` keyword in Ballerina refers to a connection with a remote service. You can pass the `HTTP Client`, `Failure Threshold` and `Reset Timeout` to the circuit breaker. The `circuitBreakerEP` is the reference for the HTTP endpoint with the circuit breaker. Whenever you call that remote HTTP endpoint, it goes through the circuit breaker. 
+
 
 ```ballerina
 package orderServices;
 
-import ballerina.log;
-import ballerina.net.http.resiliency;
-import ballerina.net.http;
+import ballerina/log;
+import ballerina/mime;
+import ballerina/net.http;
 
-@http:configuration {basePath:"/order"}
-service<http> orderService {
-    // The CircuitBreaker parameter defines an endpoint with the circuit breaker pattern
-    // The circuit breaker immediately drop remote calls if the endpoint exceeds the failure threshold
-    endpoint<resiliency:CircuitBreaker> circuitBreakerEP {
-        // Circuit Breaker should be initialized with HTTP Client, failure threshold and reset timeout
-        // HTTP client could be any HTTP endpoint that has risk of failure
-        // Failure threshold should be 0 and 1
-        // The reset timeout for the circuit breaker should be in milliseconds
-        create resiliency:CircuitBreaker(create http:HttpClient("http://localhost:9092", null),
-                                         0.2, 20000);
-    }
-    
-    @http:resourceConfig {
+endpoint http:ServiceEndpoint orderServiceEP {
+    port:9090
+};
+
+endpoint http:ClientEndpoint circuitBreakerEP {
+
+// The 'circuitBreaker' term incorporate circuit breaker pattern to the client endpoint
+// Circuit breaker will immediately drop remote calls if the endpoint exceeded the failure threshold
+    circuitBreaker:{
+                   // Failure threshold should be in between 0 and 1
+                       failureThreshold:0.2,
+                   // Reset timeout for circuit breaker should be in milliseconds
+                       resetTimeout:10000,
+                   // httpStatusCodes will have array of http error codes tracked by the circuit breaker
+                       httpStatusCodes:[400, 404, 500]
+                   },
+    targets:[
+            // HTTP client could be any HTTP endpoint that have risk of failure
+            {
+                uri:"http://localhost:9092"
+            }
+            ],
+    endpointTimeout:2000
+};
+
+
+@http:ServiceConfig {
+    basePath:"/order"
+}
+service<http:Service> orderService bind orderServiceEP {
+
+    @http:ResourceConfig {
         methods:["POST"],
         path:"/"
     }
-    resource orderResource (http:Connection httpConnection, http:InRequest request) {
+    orderResource (endpoint httpConnection, http:Request request) {
         // Initialize the request and response message to send to the inventory service
-        http:OutResponse outResponse = {};
-        http:OutRequest outRequest = {};
-        // Initialize the response message to send back to the client
-        http:InResponse inResponse = {};
-        http:HttpConnectorError err;
-        // Extract the items from the JSON payload
-        json items = request.getJsonPayload().items;
-        // Send bad request message to the client if the request does not contain items JSON
-        if (items == null) {
-            outResponse.setStringPayload("Error: Please check the input JSON payload");
-            // Set the response code as 400 to indicate a bad request
-            outResponse.statusCode = 400;
-            _ = httpConnection.respond(outResponse);
-            return;
+        http:Request outRequest = {};
+        http:Response inResponse = {};
+        // Initialize the response message to send back to client
+        // Extract the items from the json payload
+        var result = request.getJsonPayload();
+        json items;
+        match result {
+            json jsonPayload => {
+                items = jsonPayload.items;
+            }
+
+            mime:EntityError err => {
+                http:Response outResponse = {};
+                // Send bad request message to the client if request don't contain order items
+                outResponse.setStringPayload("Error : Please check the input json payload");
+                outResponse.statusCode = 400;
+                _ = httpConnection -> respond(outResponse);
+                return;
+            }
         }
+
         log:printInfo("Recieved Order : " + items.toString());
         // Set the outgoing request JSON payload with items
         outRequest.setJsonPayload(items);
-        // Call the inventory backend with the item list
-        inResponse, err = circuitBreakerEP.post("/inventory", outRequest);
-        // If inventory backend contains errors, forward the error message to the client
-        if (err != null) {
-            log:printInfo("Inventory service returns an error:" + err.msg);
-            outResponse.setJsonPayload({"Error":"Inventory Service did not respond",
-            "Error_message":err.msg});
-            _ = httpConnection.respond(outResponse);
-            return;
+        // Call the inventory backend through the circuit breaker
+        var response = circuitBreakerEP -> post("/inventory", outRequest);
+        match response {
+            http:Response outResponse => {
+            // Send response to the client if the order placement was successful
+                outResponse.setStringPayload("Order Placed : " + items.toString());
+                _ = httpConnection -> respond(outResponse);
+            }
+            http:HttpConnectorError err => {
+            // If inventory backend contain errors forward the error message to client
+                log:printInfo("Inventory service returns an error :" + err.message);
+                http:Response outResponse = {};
+                outResponse.setJsonPayload({"Error":"Inventory Service did not respond",
+                                               "Error_message":err.message});
+                _ = httpConnection -> respond(outResponse);
+                return;
+            }
         }
-        // Send response to the client if the order placement was successful
-        outResponse.setStringPayload("Order Placed : " + inResponse.getJsonPayload().toString());
-        _ = httpConnection.respond(outResponse);
     }
 }
-
 ```
 
 Refer to the complete implementaion of the orderService in the [resiliency-circuit-breaker/orderServices/order_service.bal](/orderServices/order_service.bal) file.
@@ -187,12 +221,12 @@ Refer to the complete implementation of the inventory management service in the 
 
 ### <a name="unit-testing"></a> Writing unit tests 
 
-In Ballerina, the unit test cases should be in the same package and the naming convention should be as follows,
-* Test files should contain the _test.bal suffix.
+
+In Ballerina, the unit test cases should be in the same package inside a folder named as 'tests'. The naming convention should be as follows,
 * Test functions should contain the test prefix.
   * e.g., testOrderService()
 
-This guide contains unit test cases in the respective folders. The two test cases are written to test the `orderServices` and the `inventoryStores` service.
+This guide contains unit test cases in the respective packages. The two test cases are written to test the `orderServices` and the `inventoryStores` service.
 To run the unit tests, go to the sample root directory and run the following command
 ```bash
 $ ballerina test orderServices/

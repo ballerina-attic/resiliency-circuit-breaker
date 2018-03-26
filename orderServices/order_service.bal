@@ -1,55 +1,103 @@
+// Copyright (c) 2018 WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+//
+// WSO2 Inc. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 package orderServices;
 
-import ballerina.log;
-import ballerina.net.http.resiliency;
-import ballerina.net.http;
+import ballerina/log;
+import ballerina/mime;
+import ballerina/net.http;
 
-@http:configuration {basePath:"/order"}
-service<http> orderService {
-    // The CircuitBreaker parameter defines an endpoint with circuit breaker pattern
-    // Circuit breaker will immediately drop remote calls if the endpoint exceeded the failure threshold
-    endpoint<resiliency:CircuitBreaker> circuitBreakerEP {
-        // The Circuit Breaker should be initialized with HTTP Client, failure threshold and reset timeout
-        // HTTP client could be any HTTP endpoint that have risk of failure
-        // Failure threshold should be 0 and 1
-        // reset timeout for circuit breaker should be in milliseconds
-        create resiliency:CircuitBreaker(create http:HttpClient("http://localhost:9092", null), 0.2, 20000);
-    }
+endpoint http:ServiceEndpoint orderServiceEP {
+    port:9090
+};
 
-    @http:resourceConfig {
+endpoint http:ClientEndpoint circuitBreakerEP {
+
+// The 'circuitBreaker' term incorporate circuit breaker pattern to the client endpoint
+// Circuit breaker will immediately drop remote calls if the endpoint exceeded the failure threshold
+    circuitBreaker:{
+                   // Failure threshold should be in between 0 and 1
+                       failureThreshold:0.2,
+                   // Reset timeout for circuit breaker should be in milliseconds
+                       resetTimeout:10000,
+                   // httpStatusCodes will have array of http error codes tracked by the circuit breaker
+                       httpStatusCodes:[400, 404, 500]
+                   },
+    targets:[
+            // HTTP client could be any HTTP endpoint that have risk of failure
+            {
+                uri:"http://localhost:9092"
+            }
+            ],
+    endpointTimeout:2000
+};
+
+
+@http:ServiceConfig {
+    basePath:"/order"
+}
+service<http:Service> orderService bind orderServiceEP {
+
+    @http:ResourceConfig {
         methods:["POST"],
         path:"/"
     }
-    resource orderResource (http:Connection httpConnection, http:InRequest request) {
+    orderResource (endpoint httpConnection, http:Request request) {
         // Initialize the request and response message to send to the inventory service
-        http:OutRequest outRequest = {};
-        http:InResponse inResponse = {};
+        http:Request outRequest = {};
+        http:Response inResponse = {};
         // Initialize the response message to send back to client
-        http:OutResponse outResponse = {};
-        http:HttpConnectorError err;
         // Extract the items from the json payload
-        json items = request.getJsonPayload().items;
-        // Send bad request message to the client if request don't contain order items
-        if (items == null) {
-            outResponse.setStringPayload("Error : Please check the input json payload");
-            outResponse.statusCode = 400;
-            _ = httpConnection.respond(outResponse);
-            return;
+        var result = request.getJsonPayload();
+        json items;
+        match result {
+            json jsonPayload => {
+                items = jsonPayload.items;
+            }
+
+            mime:EntityError err => {
+                http:Response outResponse = {};
+                // Send bad request message to the client if request don't contain order items
+                outResponse.setStringPayload("Error : Please check the input json payload");
+                outResponse.statusCode = 400;
+                _ = httpConnection -> respond(outResponse);
+                return;
+            }
         }
+
         log:printInfo("Recieved Order : " + items.toString());
         // Set the outgoing request JSON payload with items
         outRequest.setJsonPayload(items);
-        // Call the inventory backend with the item list
-        inResponse, err = circuitBreakerEP.post("/inventory", outRequest);
-        // If inventory backend contain errors forward the error message to client
-        if (err != null) {
-            log:printInfo("Inventory service returns an error :" + err.msg);
-            outResponse.setJsonPayload({"Error":"Inventory Service did not respond", "Error_message":err.msg});
-            _ = httpConnection.respond(outResponse);
-            return;
+        // Call the inventory backend through the circuit breaker
+        var response = circuitBreakerEP -> post("/inventory", outRequest);
+        match response {
+            http:Response outResponse => {
+            // Send response to the client if the order placement was successful
+                outResponse.setStringPayload("Order Placed : " + items.toString());
+                _ = httpConnection -> respond(outResponse);
+            }
+            http:HttpConnectorError err => {
+            // If inventory backend contain errors forward the error message to client
+                log:printInfo("Inventory service returns an error :" + err.message);
+                http:Response outResponse = {};
+                outResponse.setJsonPayload({"Error":"Inventory Service did not respond",
+                                               "Error_message":err.message});
+                _ = httpConnection -> respond(outResponse);
+                return;
+            }
         }
-        // Send response to the client if the order placement was successful
-        outResponse.setStringPayload("Order Placed : " + inResponse.getJsonPayload().toString());
-        _ = httpConnection.respond(outResponse);
     }
 }
