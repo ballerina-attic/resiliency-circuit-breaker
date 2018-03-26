@@ -69,6 +69,7 @@ The `inventoryServices` is an independent web service that accepts orders via HT
 #### order_service.bal
 The `ballerina.net.http` package contains the circuit breaker implementation. After importing that package you can directly create an endpoint with a circuit breaker. The `endpoint` keyword in Ballerina refers to a connection with a remote service. You can pass the `HTTP Client`, `Failure Threshold` and `Reset Timeout` to the circuit breaker. The `circuitBreakerEP` is the reference for the HTTP endpoint with the circuit breaker. Whenever you call that remote HTTP endpoint, it goes through the circuit breaker. 
 
+
 ```ballerina
 package orderServices;
 
@@ -219,6 +220,7 @@ Refer to the complete implementation of the inventory management service in the 
 
 
 ### <a name="unit-testing"></a> Writing unit tests 
+
 
 In Ballerina, the unit test cases should be in the same package inside a folder named as 'tests'. The naming convention should be as follows,
 * Test functions should contain the test prefix.
