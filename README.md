@@ -47,17 +47,17 @@ You’ll build a web service that uses the Circuit Breaker pattern to gracefully
 Ballerina is a complete programming language that can have any custom project structure that you wish. Although the language allows you to have any package structure, use the following package structure for this project to follow this guide.
 
 ```
-├── integrationTests
-│   └── integration_test.bal
-├── inventoryServices
-│   ├── inventory_service.bal
-│   └── tests
-│       └── inventory_service_test.bal
-└── orderServices
-    ├── order_service.bal
-    └── tests
-        └── order_service_test.bal
-
+└── src
+    ├── integrationTests
+    │   └── integration_test.bal
+    ├── inventoryServices
+    │   ├── inventory_service.bal
+    │   └── tests
+    │       └── inventory_service_test.bal
+    └── orderServices
+        ├── order_service.bal
+        └── tests
+            └── order_service_test.bal
 ```
 
 The `orderServices` is the service that handles the client orders. Order service is configured with a circuit breaker to deal with the potentially-failing remote inventory management service.  
