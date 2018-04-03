@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/rosensilva/resiliency-circuit-breaker.svg?branch=master)](https://travis-ci.org/rosensilva/resiliency-circuit-breaker)
 # Circuit Breaker
 The [circuit breaker pattern](https://martinfowler.com/bliki/CircuitBreaker.html) is a way to automatically degrade functionality when remote services fail. When you use the circuit breaker pattern, you can allow a web service to continue operating without waiting for unresponsive remote services.
 
