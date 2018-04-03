@@ -16,7 +16,7 @@ function beforeFunction () {
     _ = test:startServices("inventoryServices");
 }
 
-function afterFunc () {
+function afterFunction () {
     // Stop the inventory service
     test:stopServices("inventoryServices");
 }
@@ -37,9 +37,9 @@ function testInventoryService () {
     http:Response resp =? httpEndpoint -> post("/", req);
     json jsonResponse =? resp.getJsonPayload();
     test:assertEquals(resp.statusCode, 200, msg = "Inventory service didnot respond with 200 OK signal");
+    // Test the responses from the service with the original test data
     test:assertEquals(jsonResponse.Status.toString(), "Order Available in Inventory",
                       msg = "respond mismatch");
 }
-// Test the responses from the service with the original test data
 
 
