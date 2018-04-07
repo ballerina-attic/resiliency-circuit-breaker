@@ -32,9 +32,9 @@ endpoint http:ClientEndpoint circuitBreakerEP {
                    // Failure threshold should be in between 0 and 1
                        failureThreshold:0.2,
                    // Reset timeout for circuit breaker should be in milliseconds
-                       resetTimeout:10000,
+                       resetTimeout:10000
                    // httpStatusCodes will have array of http error codes tracked by the circuit breaker
-                       httpStatusCodes:[400, 404, 500]
+                   //httpStatusCodes:[400, 404, 500]
                    },
     targets:[
             // HTTP client could be any HTTP endpoint that have risk of failure
