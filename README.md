@@ -254,10 +254,167 @@ $ ballerina run inventoryServices.balx
 ```
 
 ### <a name="deploying-on-docker"></a> Deploying on Docker
-(Work in progress) 
+
+You can run the services that we developed above as a docker container. As Ballerina platform offers native support for running ballerina programs on containers, you just need to put the corresponding docker annotations on your service code. 
+Let's see how we can deploy the order_service we developed above on docker. When invoking this service make sure that the inventory_service is also up and running. 
+
+- In our order_service, we need to import  `` import ballerinax/docker; `` and use the annotation `` @docker:Config `` as shown below to enable docker image generation during the build time. 
+
+##### order_service.bal
+```ballerina
+package orderServices;
+
+// Other imports
+import ballerinax/docker;
+
+@docker:Config {
+    registry:"ballerina.guides.io",
+    name:"order_service",
+    tag:"v1.0"
+}
+
+endpoint http:ServiceEndpoint orderServiceEP {
+    port:9090
+};
+
+// http:ClientEndpoint definition for Circuit breaker
+
+@http:ServiceConfig {
+    basePath:"/order"
+}
+service<http:Service> orderService bind orderServiceEP {
+   
+``` 
+
+- Now you can build a Ballerina executable archive (.balx) of the service that we developed above, using the following command. It points to the service file that we developed above and it will create an executable binary out of that. 
+This will also create the corresponding docker image using the docker annotations that you have configured above. Navigate to the `<SAMPLE_ROOT>/src/` folder and run the following command.  
+  
+  ```
+  $ballerina build orderServices
+  
+  Run following command to start docker container: 
+  docker run -d -p 9090:9090 ballerina.guides.io/order_service:v1.0
+  ```
+- Once you successfully build the docker image, you can run it with the `` docker run`` command that is shown in the previous step.  
+
+    ```   
+    docker run -d -p 9090:9090 ballerina.guides.io/order_service:v1.0
+    ```
+    Here we run the docker image with flag`` -p <host_port>:<container_port>`` so that we use the host port 9090 and the container port 9090. Therefore you can access the service through the host port. 
+
+- Verify docker container is running with the use of `` $ docker ps``. The status of the docker container should be shown as 'Up'. 
+- You can access the service using the same curl commands that we've used above. 
+ 
+    ```
+   curl -v -X POST -d '{ "items":{"1":"Basket","2": "Table","3": "Chair"}}' \
+   "http://localhost:9090/order" -H "Content-Type:application/json"
+   
+    ```
+
 
 ### <a name="deploying-on-k8s"></a> Deploying on Kubernetes
-(Work in progress) 
+
+- You can run the services that we developed above, on Kubernetes. The Ballerina language offers native support for running a ballerina programs on Kubernetes, 
+with the use of Kubernetes annotations that you can include as part of your service code. Also, it will take care of the creation of the docker images. 
+So you don't need to explicitly create docker images prior to deploying it on Kubernetes.   
+Let's see how we can deploy the order_service we developed above on kubernetes. When invoking this service make sure that the inventory_service is also up and running. 
+
+- We need to import `` import ballerinax/kubernetes; `` and use `` @kubernetes `` annotations as shown below to enable kubernetes deployment for the service we developed above. 
+
+##### order_service.bal
+
+```ballerina
+package orderServices;
+
+// Other imports
+import ballerinax/kubernetes;
+
+@kubernetes:Ingress {
+    hostname:"ballerina.guides.io",
+    name:"ballerina-guides-order-service",
+    path:"/"
+}
+
+@kubernetes:Service {
+    serviceType:"NodePort",
+    name:"ballerina-guides-order-service"
+}
+
+@kubernetes:Deployment {
+    image:"ballerina.guides.io/order_service:v1.0",
+    name:"ballerina-guides-order-service"
+}
+
+endpoint http:ServiceEndpoint orderServiceEP {
+    port:9090
+};
+
+// http:ClientEndpoint definition for Circuit breaker
+
+@http:ServiceConfig {
+    basePath:"/order"
+}
+service<http:Service> orderService bind orderServiceEP {
+        
+``` 
+- Here we have used ``  @kubernetes:Deployment `` to specify the docker image name which will be created as part of building this service. 
+- We have also specified `` @kubernetes:Service {} `` so that it will create a Kubernetes service which will expose the Ballerina service that is running on a Pod.  
+- In addition we have used `` @kubernetes:Ingress `` which is the external interface to access your service (with path `` /`` and host name ``ballerina.guides.io``)
+
+- Now you can build a Ballerina executable archive (.balx) of the service that we developed above, using the following command. It points to the service file that we developed above and it will create an executable binary out of that. 
+This will also create the corresponding docker image and the Kubernetes artifacts using the Kubernetes annotations that you have configured above.
+  
+  ```
+  $ballerina build orderServices
+  
+  Run following command to deploy kubernetes artifacts:  
+  kubectl apply -f ./target/orderServices/kubernetes
+ 
+  ```
+
+- You can verify that the docker image that we specified in `` @kubernetes:Deployment `` is created, by using `` docker ps images ``. 
+- Also the Kubernetes artifacts related our service, will be generated in `` ./target/orderServices/kubernetes``. 
+- Now you can create the Kubernetes deployment using:
+
+```
+ $ kubectl apply -f ./target/orderServices/kubernetes 
+   deployment.extensions "ballerina-guides-order-service" created
+   ingress.extensions "ballerina-guides-order-service" created
+   service "ballerina-guides-order-service" created
+
+```
+- You can verify Kubernetes deployment, service and ingress are running properly, by using following Kubernetes commands. 
+```
+$kubectl get service
+$kubectl get deploy
+$kubectl get pods
+$kubectl get ingress
+
+```
+
+- If everything is successfully deployed, you can invoke the service either via Node port or ingress. 
+
+Node Port:
+ 
+```
+  curl -v -X POST -d '{ "items":{"1":"Basket","2": "Table","3": "Chair"}}' \
+  "http://<Minikube_host_IP>:<Node_Port>/order" -H "Content-Type:application/json"  
+
+```
+Ingress:
+
+Add `/etc/hosts` entry to match hostname. 
+``` 
+127.0.0.1 ballerina.guides.io
+```
+
+Access the service 
+
+``` 
+ curl -v -X POST -d '{ "items":{"1":"Basket","2": "Table","3": "Chair"}}' \
+ "http://ballerina.guides.io/order" -H "Content-Type:application/json" 
+    
+```
 
 
 ## <a name="observability"></a> Observability 
