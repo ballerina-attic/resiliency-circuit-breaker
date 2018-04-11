@@ -19,6 +19,30 @@ package orderServices;
 import ballerina/log;
 import ballerina/mime;
 import ballerina/net.http;
+//import ballerinax/docker;
+//import ballerinax/kubernetes;
+
+//@docker:Config {
+//    registry:"ballerina.guides.io",
+//    name:"order_service",
+//    tag:"v1.0"
+//}
+
+//@kubernetes:Ingress {
+//    hostname:"ballerina.guides.io",
+//    name:"ballerina-guides-order-service",
+//    path:"/"
+//}
+//
+//@kubernetes:Service {
+//    serviceType:"NodePort",
+//    name:"ballerina-guides-order-service"
+//}
+//
+//@kubernetes:Deployment {
+//    image:"ballerina.guides.io/order_service:v1.0",
+//    name:"ballerina-guides-order-service"
+//}
 
 endpoint http:ServiceEndpoint orderServiceEP {
     port:9090
