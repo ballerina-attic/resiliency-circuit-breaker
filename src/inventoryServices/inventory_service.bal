@@ -18,7 +18,30 @@ package inventoryServices;
 
 import ballerina/log;
 import ballerina/net.http;
+//import ballerinax/docker;
+//import ballerinax/kubernetes;
 
+//@docker:Config {
+//    registry:"ballerina.guides.io",
+//    name:"inventory_service",
+//    tag:"v1.0"
+//}
+
+//@kubernetes:Ingress {
+//    hostname:"ballerina.guides.io",
+//    name:"ballerina-guides-inventory-service",
+//    path:"/"
+//}
+//
+//@kubernetes:Service {
+//    serviceType:"NodePort",
+//    name:"ballerina-guides-inventory-service"
+//}
+//
+//@kubernetes:Deployment {
+//    image:"ballerina.guides.io/inventory_service:v1.0",
+//    name:"ballerina-guides-inventory-service"
+//}
 
 endpoint http:ServiceEndpoint inventoryEP {
     port:9092
