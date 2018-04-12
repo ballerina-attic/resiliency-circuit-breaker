@@ -176,7 +176,7 @@ Refer to the complete implementation of the inventory management service in the 
 
 ### Try it out
 
-1. Run both the orderService and inventoryService by entering the following commands in sperate terminals from the sample root directory.
+- Run both the orderService and inventoryService by entering the following commands in sperate terminals from the sample root directory.
 ```bash
     $ ballerina run inventoryServices/
 ```
@@ -185,7 +185,7 @@ Refer to the complete implementation of the inventory management service in the 
    $ ballerina run orderServices/
 ```
 
-2. Invoke the orderService by sending an order via the HTTP POST method. 
+- Invoke the orderService by sending an order via the HTTP POST method. 
 ``` bash
    curl -v -X POST -d '{ "items":{"1":"Basket","2": "Table","3": "Chair"}}' \
    "http://localhost:9090/order" -H "Content-Type:application/json"
@@ -195,9 +195,9 @@ Refer to the complete implementation of the inventory management service in the 
    Order Placed : {"Status":"Order Available in Inventory", \ 
    "items":{"1":"Basket","2":"Table","3":"Chair"}}
 ```
-3. Shutdown the inventory service. Your order service now has a broken remote endpoint for the inventory service.
+- Shutdown the inventory service. Your order service now has a broken remote endpoint for the inventory service.
 
-4. Invoke the orderService by sending an order via HTTP method.
+- Invoke the orderService by sending an order via HTTP method.
 ``` bash
    curl -v -X POST -d '{ "items":{"1":"Basket","2": "Table","3": "Chair"}}' \ 
    "http://localhost:9090/order" -H "Content-Type
@@ -208,7 +208,7 @@ Refer to the complete implementation of the inventory management service in the 
 ```
    This shows that the order service attempted to call the inventory service and found that the inventory service is not available.
 
-5. Invoke the orderService again soon after sending the previous request.
+- Invoke the orderService again soon after sending the previous request.
 ``` bash
    curl -v -X POST -d '{ "items":{"1":"Basket","2": "Table","3": "Chair"}}' \ 
    "http://localhost:9090/order" -H "Content-Type
