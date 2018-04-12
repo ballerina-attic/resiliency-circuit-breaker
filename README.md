@@ -177,47 +177,47 @@ Refer to the complete implementation of the inventory management service in the 
 ### Try it out
 
 1. Run both the orderService and inventoryService by entering the following commands in sperate terminals from the sample root directory.
-    ```bash
+```bash
     $ ballerina run inventoryServices/
-   ```
+```
 
-   ```bash
+```bash
    $ ballerina run orderServices/
-   ```
+```
 
 2. Invoke the orderService by sending an order via the HTTP POST method. 
-   ``` bash
+``` bash
    curl -v -X POST -d '{ "items":{"1":"Basket","2": "Table","3": "Chair"}}' \
    "http://localhost:9090/order" -H "Content-Type:application/json"
-   ```
+```
    The order service sends a response similar to the following:
-   ```
+```
    Order Placed : {"Status":"Order Available in Inventory", \ 
    "items":{"1":"Basket","2":"Table","3":"Chair"}}
-   ```
+```
 3. Shutdown the inventory service. Your order service now has a broken remote endpoint for the inventory service.
 
 4. Invoke the orderService by sending an order via HTTP method.
-   ``` bash
+``` bash
    curl -v -X POST -d '{ "items":{"1":"Basket","2": "Table","3": "Chair"}}' \ 
    "http://localhost:9090/order" -H "Content-Type
-   ```
+```
    The order service sends a response similar to the following:
-   ```json
+```json
    {"Error":"Inventory Service did not respond","Error_message":"Connection refused, localhost-9092"}
-   ```
+```
    This shows that the order service attempted to call the inventory service and found that the inventory service is not available.
 
 5. Invoke the orderService again soon after sending the previous request.
-   ``` bash
+``` bash
    curl -v -X POST -d '{ "items":{"1":"Basket","2": "Table","3": "Chair"}}' \ 
    "http://localhost:9090/order" -H "Content-Type
-   ```
+```
    Now the Circuit Breaker is activated since the order service knows that the inventory service is unavailable. This time the order service responds with the following error message.
-   ```json
+```json
    {"Error":"Inventory Service did not respond","Error_message":"Upstream service
    unavailable. Requests to upstream service will be suspended for 14451 milliseconds."}
-   ```
+```
 
 
 ### Writing unit tests 
@@ -288,27 +288,27 @@ service<http:Service> orderService bind orderServiceEP {
 - Now you can build a Ballerina executable archive (.balx) of the service that we developed above, using the following command. It points to the service file that we developed above and it will create an executable binary out of that. 
 This will also create the corresponding docker image using the docker annotations that you have configured above. Navigate to the `<SAMPLE_ROOT>/src/` folder and run the following command.  
   
-  ```
+```
   $ballerina build orderServices
   
   Run following command to start docker container: 
   docker run -d -p 9090:9090 ballerina.guides.io/order_service:v1.0
-  ```
+```
 - Once you successfully build the docker image, you can run it with the `` docker run`` command that is shown in the previous step.  
 
-    ```   
+```   
     docker run -d -p 9090:9090 ballerina.guides.io/order_service:v1.0
-    ```
+```
     Here we run the docker image with flag`` -p <host_port>:<container_port>`` so that we use the host port 9090 and the container port 9090. Therefore you can access the service through the host port. 
 
 - Verify docker container is running with the use of `` $ docker ps``. The status of the docker container should be shown as 'Up'. 
 - You can access the service using the same curl commands that we've used above. 
  
-    ```
+```
    curl -v -X POST -d '{ "items":{"1":"Basket","2": "Table","3": "Chair"}}' \
    "http://localhost:9090/order" -H "Content-Type:application/json"
    
-    ```
+```
 
 ### Deploying on Kubernetes
 
@@ -362,13 +362,13 @@ service<http:Service> orderService bind orderServiceEP {
 - Now you can build a Ballerina executable archive (.balx) of the service that we developed above, using the following command. It points to the service file that we developed above and it will create an executable binary out of that. 
 This will also create the corresponding docker image and the Kubernetes artifacts using the Kubernetes annotations that you have configured above.
   
-  ```
+```
   $ballerina build orderServices
   
   Run following command to deploy kubernetes artifacts:  
   kubectl apply -f ./target/orderServices/kubernetes
  
-  ```
+```
 
 - You can verify that the docker image that we specified in `` @kubernetes:Deployment `` is created, by using `` docker ps images ``. 
 - Also the Kubernetes artifacts related our service, will be generated in `` ./target/orderServices/kubernetes``. 
