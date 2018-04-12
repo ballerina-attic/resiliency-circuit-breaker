@@ -8,7 +8,7 @@ The following are the sections available in this guide.
 
 - [What you'll build](#what-youll-build)
 - [Prerequisites](#prerequisites)
-- [Developing the RESTFul service with circuit breaker](#developing-the-restFul-service-with-circuit-breaker)
+- [Developing the RESTFul service with circuit breaker](#developing-the-restful-service-with-circuit-breaker)
 - [Testing](#testing)
 - [Deployment](#deployment)
 
