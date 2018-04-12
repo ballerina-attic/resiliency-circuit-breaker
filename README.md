@@ -6,14 +6,13 @@ The [circuit breaker pattern](https://martinfowler.com/bliki/CircuitBreaker.html
 
 The following are the sections available in this guide.
 
-- [What you'll build](#what-you-build)
-- [Prerequisites](#pre-req)
-- [Developing the RESTFul service with circuit breaker](#developing-service)
+- [What you'll build](#what-youll-build)
+- [Prerequisites](#prerequisites)
+- [Developing the RESTFul service with circuit breaker](#developing-the-restful-service-with-circuit-breaker)
 - [Testing](#testing)
-- [Deployment](#deploying-the-scenario)
-- [Observability](#observability)
+- [Deployment](#deployment)
 
-## <a name="what-you-build"></a>  What you'll build
+## What you'll build
 
 You’ll build a web service that uses the Circuit Breaker pattern to gracefully degrade functionality when a remorte backend fails. To understand this better, you'll be mapping this with a real world scenario of an order processing service of a retail store. The retail store uses a potentially-failing remote backend for inventory management. When a specific order comes to the order processing service, the service calls the inventory management service to check the availability of items.
 
@@ -30,7 +29,7 @@ You’ll build a web service that uses the Circuit Breaker pattern to gracefully
 
 **Place orders through retail store**: To place a new order you can use the HTTP POST message that contains the order details
 
-## <a name="pre-req"></a> Prerequisites
+## Prerequisites
  
 - JDK 1.8 or later
 - [Ballerina Distribution](https://github.com/ballerina-lang/ballerina/blob/master/docs/quick-tour.md)
@@ -40,7 +39,7 @@ You’ll build a web service that uses the Circuit Breaker pattern to gracefully
 - Ballerina IDE plugins ([IntelliJ IDEA](https://plugins.jetbrains.com/plugin/9520-ballerina), [VSCode](https://marketplace.visualstudio.com/items?itemName=WSO2.Ballerina), [Atom](https://atom.io/packages/language-ballerina))
 - [Docker](https://docs.docker.com/engine/installation/)
 
-## <a name="developing-service"></a> Developing the RESTFul service with circuit breaker
+## Developing the RESTFul service with circuit breaker
 
 ### Before you begin
 
@@ -65,7 +64,7 @@ The `orderServices` is the service that handles the client orders. Order service
 
 The `inventoryServices` is an independent web service that accepts orders via HTTP POST method from `orderService` and sends the availability of order items.
 
-### Implementation of the Ballerina services
+### Implementation of the Ballerina services with circuit breaker
 
 #### order_service.bal
 The `ballerina.net.http` package contains the circuit breaker implementation. After importing that package you can directly create an endpoint with a circuit breaker. The `endpoint` keyword in Ballerina refers to a connection with a remote service. You can pass the `HTTP Client`, `Failure Threshold` and `Reset Timeout` to the circuit breaker. The `circuitBreakerEP` is the reference for the HTTP endpoint with the circuit breaker. Whenever you call that remote HTTP endpoint, it goes through the circuit breaker. 
@@ -84,22 +83,23 @@ endpoint http:ServiceEndpoint orderServiceEP {
 
 endpoint http:ClientEndpoint circuitBreakerEP {
 
-// The 'circuitBreaker' term incorporate circuit breaker pattern to the client endpoint
-// Circuit breaker will immediately drop remote calls if the endpoint exceeded the failure threshold
+    // 'circuitBreaker' will incorporate circuit breaker pattern to the client endpoint
+    // Circuit breaker will immediately drop remote calls if the
+    // endpoint exceeded the failure threshold
     circuitBreaker:{
-                   // Failure threshold should be in between 0 and 1
-                       failureThreshold:0.2,
-                   // Reset timeout for circuit breaker should be in milliseconds
-                       resetTimeout:10000,
-                   // httpStatusCodes will have array of http error codes tracked by the circuit breaker
-                       httpStatusCodes:[400, 404, 500]
-                   },
+        // Failure threshold should be in between 0 and 1
+        failureThreshold:0.2,
+        // Reset timeout for circuit breaker should be in milliseconds
+        resetTimeout:10000,
+        // httpStatusCodes will have array of http error codes tracked by the CB
+        httpStatusCodes:[400, 404, 500]
+    },
     targets:[
-            // HTTP client could be any HTTP endpoint that have risk of failure
-            {
-                uri:"http://localhost:9092"
-            }
-            ],
+    // HTTP client could be any HTTP endpoint that have risk of failure
+        {
+            uri:"http://localhost:9092"
+        }
+    ],
     endpointTimeout:2000
 };
 
@@ -113,7 +113,7 @@ service<http:Service> orderService bind orderServiceEP {
         methods:["POST"],
         path:"/"
     }
-    orderResource (endpoint httpConnection, http:Request request) {
+    orderResource(endpoint httpConnection, http:Request request) {
         // Initialize the request and response message to send to the inventory service
         http:Request outRequest = {};
         http:Response inResponse = {};
@@ -128,8 +128,8 @@ service<http:Service> orderService bind orderServiceEP {
 
             mime:EntityError err => {
                 http:Response outResponse = {};
-                // Send bad request message to the client if request don't contain order items
-                outResponse.setStringPayload("Error : Please check the input json payload");
+                // Send bad request message if request don't contain order items
+                outResponse.setStringPayload("Error:Please check the input json payload");
                 outResponse.statusCode = 400;
                 _ = httpConnection -> respond(outResponse);
                 return;
@@ -143,16 +143,16 @@ service<http:Service> orderService bind orderServiceEP {
         var response = circuitBreakerEP -> post("/inventory", outRequest);
         match response {
             http:Response outResponse => {
-            // Send response to the client if the order placement was successful
+                // Send response to the client if the order placement was successful
                 outResponse.setStringPayload("Order Placed : " + items.toString());
                 _ = httpConnection -> respond(outResponse);
             }
             http:HttpConnectorError err => {
-            // If inventory backend contain errors forward the error message to client
+                // If inventory backend contain errors forward the error message to client
                 log:printInfo("Inventory service returns an error :" + err.message);
                 http:Response outResponse = {};
                 outResponse.setJsonPayload({"Error":"Inventory Service did not respond",
-                                               "Error_message":err.message});
+                        "Error_message":err.message});
                 _ = httpConnection -> respond(outResponse);
                 return;
             }
@@ -167,11 +167,11 @@ Refer to the complete implementaion of the orderService in the [resiliency-circu
 #### inventory_service.bal 
 The inventory management service is a simple web service that is used to mock inventory management. This service sends the following JSON message to any request. 
 ```json
-{"Status":"Order Available in Inventory",   "items":"requested items list"}
+{"Status":"Order Available in Inventory", "items":"requested items list"}
 ```
 Refer to the complete implementation of the inventory management service in the [resiliency-circuit-breaker/inventoryServices/inventory_service.bal](/inventoryServices/inventory_service.bal) file.
 
-## <a name="testing"></a> Testing 
+## Testing 
 
 
 ### Try it out
@@ -220,7 +220,7 @@ Refer to the complete implementation of the inventory management service in the 
    ```
 
 
-### <a name="unit-testing"></a> Writing unit tests 
+### Writing unit tests 
 
 
 In Ballerina, the unit test cases should be in the same package inside a folder named as 'tests'. The naming convention should be as follows,
@@ -237,23 +237,22 @@ $ ballerina test orderServices/
 $ ballerina test inventoryServices/
 ```
 
-## <a name="deploying-the-scenario"></a> Deployment
+## Deployment
 
 Once you are done with the development, you can deploy the service using any of the methods listed below. 
 
-### <a name="deploying-on-locally"></a> Deploying locally
+### Deploying locally
 You can deploy the RESTful service that you developed above in your local environment. You can use the Ballerina executable archive (.balx) that you created above and run it in your local environment as follows. 
 
 ```
 $ ballerina run orderServices.balx 
 ```
 
-
 ```
 $ ballerina run inventoryServices.balx 
 ```
 
-### <a name="deploying-on-docker"></a> Deploying on Docker
+### Deploying on Docker
 
 You can run the services that we developed above as a docker container. As Ballerina platform offers native support for running ballerina programs on containers, you just need to put the corresponding docker annotations on your service code. 
 Let's see how we can deploy the order_service we developed above on docker. When invoking this service make sure that the inventory_service is also up and running. 
@@ -311,8 +310,7 @@ This will also create the corresponding docker image using the docker annotation
    
     ```
 
-
-### <a name="deploying-on-k8s"></a> Deploying on Kubernetes
+### Deploying on Kubernetes
 
 - You can run the services that we developed above, on Kubernetes. The Ballerina language offers native support for running a ballerina programs on Kubernetes, 
 with the use of Kubernetes annotations that you can include as part of your service code. Also, it will take care of the creation of the docker images. 
@@ -415,16 +413,3 @@ Access the service
  "http://ballerina.guides.io/order" -H "Content-Type:application/json" 
     
 ```
-
-
-## <a name="observability"></a> Observability 
-
-### <a name="logging"></a> Logging
-(Work in progress) 
-
-### <a name="metrics"></a> Metrics
-(Work in progress) 
-
-
-### <a name="tracing"></a> Tracing 
-(Work in progress) 
