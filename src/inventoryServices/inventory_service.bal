@@ -17,7 +17,7 @@
 package inventoryServices;
 
 import ballerina/log;
-import ballerina/net.http;
+import ballerina/http;
 //import ballerinax/docker;
 //import ballerinax/kubernetes;
 
@@ -43,7 +43,7 @@ import ballerina/net.http;
 //    name:"ballerina-guides-inventory-service"
 //}
 
-endpoint http:ServiceEndpoint inventoryEP {
+endpoint http:Listener inventoryEP {
     port:9092
 };
 
@@ -53,12 +53,13 @@ service<http:Service> inventoryService bind inventoryEP {
         methods:["POST"],
         path:"/"
     }
-    inventoryResource (endpoint httpConnection, http:Request request) {
+    inventoryResource(endpoint httpConnection, http:Request request) {
         // Initialize the response message that needs to send back to client
-        http:Response response = {};
+        http:Response response;
         // Extract the items list from the request JSON payload
-        json items =? <json>request.getJsonPayload();
-        log:printInfo("Checking the order items : " + items.toString());
+        json items = check <json>request.getJsonPayload();
+        string itemsList =  items.toString() but {error => "No items"};
+        log:printInfo("Checking the order items : " + itemsList);
         // Prepare the response message
         json responseJson = {"Status":"Order Available in Inventory", "items":items};
         response.setJsonPayload(responseJson);
