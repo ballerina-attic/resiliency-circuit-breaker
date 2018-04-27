@@ -67,40 +67,42 @@ The `inventoryServices` is an independent web service that accepts orders via HT
 ### Implementation of the Ballerina services with circuit breaker
 
 #### order_service.bal
-The `ballerina.net.http` package contains the circuit breaker implementation. After importing that package you can directly create an endpoint with a circuit breaker. The `endpoint` keyword in Ballerina refers to a connection with a remote service. You can pass the `HTTP Client`, `Failure Threshold` and `Reset Timeout` to the circuit breaker. The `circuitBreakerEP` is the reference for the HTTP endpoint with the circuit breaker. Whenever you call that remote HTTP endpoint, it goes through the circuit breaker. 
-
+The `ballerina/http` package contains the circuit breaker implementation. After importing that package you can create a client with a circuit breaker. The `endpoint` keyword in Ballerina refers to a connection with a remote service. You can pass the `Rolling Window`, `Failure Threshold`, `Status Codes` and `Reset Timeout` to the circuit breaker. The `circuitBreakerEP` is the reference for the HTTP endpoint with the circuit breaker. Whenever you call that remote HTTP endpoint, it goes through the circuit breaker. 
 
 ```ballerina
-package orderServices;
-
 import ballerina/log;
 import ballerina/mime;
-import ballerina/net.http;
+import ballerina/http;
 
-endpoint http:ServiceEndpoint orderServiceEP {
+endpoint http:Listener orderServiceEP {
     port:9090
 };
 
-endpoint http:ClientEndpoint circuitBreakerEP {
+endpoint http:Client circuitBreakerEP {
 
-    // 'circuitBreaker' will incorporate circuit breaker pattern to the client endpoint
-    // Circuit breaker will immediately drop remote calls if the
-    // endpoint exceeded the failure threshold
+    // 'circuitBreaker' keyword incorporate circuit breaker pattern to the client endpoint
+    // Circuit breaker will immediately drop remote calls if the endpoint exceeded
+    //the failure threshold
     circuitBreaker:{
+        // Configure rolling window parameters with time window and bucket size in ms
+        rollingWindow:{
+            timeWindowMillies:10000,
+            bucketSizeMillies:2000
+        },
         // Failure threshold should be in between 0 and 1
         failureThreshold:0.2,
         // Reset timeout for circuit breaker should be in milliseconds
-        resetTimeout:10000,
+        resetTimeMillies:10000,
         // httpStatusCodes will have array of http error codes tracked by the CB
-        httpStatusCodes:[400, 404, 500]
+        statusCodes:[400, 404, 500]
     },
     targets:[
     // HTTP client could be any HTTP endpoint that have risk of failure
         {
-            uri:"http://localhost:9092"
+            url:"http://localhost:9092"
         }
     ],
-    endpointTimeout:2000
+    timeoutMillis:2000
 };
 
 
@@ -115,8 +117,8 @@ service<http:Service> orderService bind orderServiceEP {
     }
     orderResource(endpoint httpConnection, http:Request request) {
         // Initialize the request and response message to send to the inventory service
-        http:Request outRequest = {};
-        http:Response inResponse = {};
+        http:Request outRequest;
+        http:Response inResponse;
         // Initialize the response message to send back to client
         // Extract the items from the json payload
         var result = request.getJsonPayload();
@@ -127,16 +129,16 @@ service<http:Service> orderService bind orderServiceEP {
             }
 
             mime:EntityError err => {
-                http:Response outResponse = {};
-                // Send bad request message if request don't contain order items
+                http:Response outResponse;
+                // Send bad request message to the client if request don't contain order
                 outResponse.setStringPayload("Error:Please check the input json payload");
                 outResponse.statusCode = 400;
                 _ = httpConnection -> respond(outResponse);
-                return;
+                done;
             }
         }
-
-        log:printInfo("Recieved Order : " + items.toString());
+        string orderItems = items.toString() but { error => "No items" };
+        log:printInfo("Recieved Order : " + orderItems);
         // Set the outgoing request JSON payload with items
         outRequest.setJsonPayload(items);
         // Call the inventory backend through the circuit breaker
@@ -144,17 +146,18 @@ service<http:Service> orderService bind orderServiceEP {
         match response {
             http:Response outResponse => {
                 // Send response to the client if the order placement was successful
-                outResponse.setStringPayload("Order Placed : " + items.toString());
+
+                outResponse.setStringPayload("Order Placed : " + orderItems);
                 _ = httpConnection -> respond(outResponse);
             }
             http:HttpConnectorError err => {
                 // If inventory backend contain errors forward the error message to client
                 log:printInfo("Inventory service returns an error :" + err.message);
-                http:Response outResponse = {};
+                http:Response outResponse;
                 outResponse.setJsonPayload({"Error":"Inventory Service did not respond",
                         "Error_message":err.message});
                 _ = httpConnection -> respond(outResponse);
-                return;
+                done;
             }
         }
     }
@@ -299,7 +302,8 @@ This will also create the corresponding docker image using the docker annotation
 ```   
     docker run -d -p 9090:9090 ballerina.guides.io/order_service:v1.0
 ```
-    Here we run the docker image with flag`` -p <host_port>:<container_port>`` so that we use the host port 9090 and the container port 9090. Therefore you can access the service through the host port. 
+
+Here we run the docker image with flag`` -p <host_port>:<container_port>`` so that we use the host port 9090 and the container port 9090. Therefore you can access the service through the host port. 
 
 - Verify docker container is running with the use of `` $ docker ps``. The status of the docker container should be shown as 'Up'. 
 - You can access the service using the same curl commands that we've used above. 
