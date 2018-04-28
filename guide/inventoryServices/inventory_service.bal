@@ -14,8 +14,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package inventoryServices;
-
 import ballerina/log;
 import ballerina/http;
 //import ballerinax/docker;
@@ -44,26 +42,26 @@ import ballerina/http;
 //}
 
 endpoint http:Listener inventoryEP {
-    port:9092
+    port: 9092
 };
 
-@http:ServiceConfig {basePath:"/inventory"}
-service<http:Service> inventoryService bind inventoryEP {
+@http:ServiceConfig { basePath: "/inventory" }
+service<http:Service> InventoryService bind inventoryEP {
     @http:ResourceConfig {
-        methods:["POST"],
-        path:"/"
+        methods: ["POST"],
+        path: "/"
     }
     inventoryResource(endpoint httpConnection, http:Request request) {
         // Initialize the response message that needs to send back to client
         http:Response response;
         // Extract the items list from the request JSON payload
         json items = check <json>request.getJsonPayload();
-        string itemsList =  items.toString() but {error => "No items"};
+        string itemsList = items.toString();
         log:printInfo("Checking the order items : " + itemsList);
         // Prepare the response message
-        json responseJson = {"Status":"Order Available in Inventory", "items":items};
+        json responseJson = { "Status": "Order Available in Inventory", "items": items };
         response.setJsonPayload(responseJson);
         // Send the response to the client
-        _ = httpConnection -> respond(response);
+        _ = httpConnection->respond(response);
     }
 }
