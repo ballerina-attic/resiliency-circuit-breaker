@@ -25,12 +25,12 @@ endpoint http:Client httpEndpoint {
 
 function beforeFunction() {
     // Start order service
-    _ = test:startServices("orderServices");
+    _ = test:startServices("order_services");
 }
 
 function afterFunction() {
     // stop order service
-    test:stopServices("orderServices");
+    test:stopServices("order_services");
 }
 
 @test:Config {
