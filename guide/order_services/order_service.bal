@@ -14,8 +14,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package orderServices;
-
 import ballerina/log;
 import ballerina/mime;
 import ballerina/http;
@@ -45,43 +43,40 @@ import ballerina/http;
 //}
 
 endpoint http:Listener orderServiceEP {
-    port:9090
+    port: 9090
 };
 
 endpoint http:Client circuitBreakerEP {
 
     // The 'circuitBreaker' term incorporate circuit breaker pattern to the client endpoint
     // Circuit breaker will immediately drop remote calls if the endpoint exceeded the failure threshold
-    circuitBreaker:{
-        rollingWindow:{
-            timeWindowMillies:10000,
-            bucketSizeMillies:2000
+    circuitBreaker: {
+        rollingWindow: {
+            timeWindowMillis: 10000,
+            bucketSizeMillis: 2000
         },
         // Failure threshold should be in between 0 and 1
-        failureThreshold:0.2,
+        failureThreshold: 0.2,
         // Reset timeout for circuit breaker should be in milliseconds
-        resetTimeMillies:10000,
+        resetTimeMillis: 10000,
         // httpStatusCodes will have array of http error codes tracked by the circuit breaker
-        statusCodes:[400, 404, 500]
+        statusCodes: [400, 404, 500]
     },
-    targets:[
     // HTTP client could be any HTTP endpoint that have risk of failure
-        {
-            url:"http://localhost:9092"
-        }
-    ],
-    timeoutMillis:2000
+    url: "http://localhost:9092"
+    ,
+    timeoutMillis: 2000
 };
 
 
 @http:ServiceConfig {
-    basePath:"/order"
+    basePath: "/order"
 }
-service<http:Service> orderService bind orderServiceEP {
+service<http:Service> Order bind orderServiceEP {
 
     @http:ResourceConfig {
-        methods:["POST"],
-        path:"/"
+        methods: ["POST"],
+        path: "/"
     }
     orderResource(endpoint httpConnection, http:Request request) {
         // Initialize the request and response message to send to the inventory service
@@ -96,35 +91,36 @@ service<http:Service> orderService bind orderServiceEP {
                 items = jsonPayload.items;
             }
 
-            mime:EntityError err => {
+            error err => {
                 http:Response outResponse;
                 // Send bad request message to the client if request don't contain order items
-                outResponse.setStringPayload("Error : Please check the input json payload");
+                outResponse.setTextPayload("Error : Please check the input json payload"
+                );
                 outResponse.statusCode = 400;
-                _ = httpConnection -> respond(outResponse);
+                _ = httpConnection->respond(outResponse);
                 done;
             }
         }
-        string orderItems =  items.toString() but { error => "No items" };
+        string orderItems = items.toString();
         log:printInfo("Recieved Order : " + orderItems);
         // Set the outgoing request JSON payload with items
         outRequest.setJsonPayload(items);
         // Call the inventory backend through the circuit breaker
-        var response = circuitBreakerEP -> post("/inventory", outRequest);
+        var response = circuitBreakerEP->post("/inventory", request = outRequest);
         match response {
             http:Response outResponse => {
                 // Send response to the client if the order placement was successful
 
-                outResponse.setStringPayload("Order Placed : " + orderItems);
-                _ = httpConnection -> respond(outResponse);
+                outResponse.setTextPayload("Order Placed : " + orderItems);
+                _ = httpConnection->respond(outResponse);
             }
-            http:HttpConnectorError err => {
+            error err => {
                 // If inventory backend contain errors forward the error message to client
                 log:printInfo("Inventory service returns an error :" + err.message);
                 http:Response outResponse;
-                outResponse.setJsonPayload({"Error":"Inventory Service did not respond",
-                        "Error_message":err.message});
-                _ = httpConnection -> respond(outResponse);
+                outResponse.setJsonPayload({ "Error": "Inventory Service did not respond",
+                        "Error_message": err.message });
+                _ = httpConnection->respond(outResponse);
                 done;
             }
         }
