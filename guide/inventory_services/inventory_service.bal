@@ -60,7 +60,7 @@ service<http:Service> InventoryService bind inventoryEP {
         log:printInfo("Checking the order items : " + itemsList);
         // Prepare the response message
         json responseJson = { "Status": "Order Available in Inventory", "items": items };
-        response.setJsonPayload(responseJson);
+        response.setPayload(responseJson);
         // Send the response to the client
         _ = httpConnection->respond(response);
     }
