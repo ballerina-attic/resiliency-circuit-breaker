@@ -47,7 +47,7 @@ function testOrderService() {
     json requestJson = { "items": { "1": "Basket", "2": "Table", "3": "Chair" } };
     request.setJsonPayload(requestJson);
     // Send the request to service and get the response
-    response = check httpEndpoint->post("/", request = request);
+    response = check httpEndpoint->post("/",  request);
     json jsonResponse = check response.getJsonPayload();
     // Test the responses from the service with the original test data
     test:assertEquals(response.statusCode, 200, msg =
@@ -59,7 +59,7 @@ function testOrderService() {
     //test:assertTrue(result, msg = " Error message mismatch");
 
     // Sending the same request to order management service to test Circuit Breaker
-    response = check httpEndpoint->post("/", request = request);
+    response = check httpEndpoint->post("/", request);
     jsonResponse = check response.getJsonPayload();
     // Test the responses from the service with the original test data
     test:assertEquals(response.statusCode, 200, msg =

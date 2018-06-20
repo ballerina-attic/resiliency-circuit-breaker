@@ -173,12 +173,12 @@ service<http:Service> Order bind orderServiceEP {
         // Set the outgoing request JSON payload with items
         outRequest.setJsonPayload(items);
         // Call the inventory backend through the circuit breaker
-        var response = circuitBreakerEP->post("/inventory", request = outRequest);
+        var response = circuitBreakerEP->post("/inventory", outRequest);
         match response {
             http:Response outResponse => {
                 // Send response to the client if the order placement was successful
 
-                outResponse.setTextPayload("Order Placed : " + orderItems);
+                outResponse.setPayload("Order Placed : " + orderItems);
                 _ = httpConnection->respond(outResponse);
             }
             error err => {
@@ -232,7 +232,7 @@ You can run the services that you developed above, in your local environment. Op
 - Invoke the orderService by sending an order via HTTP method.
 ``` bash
    curl -v -X POST -d '{ "items":{"1":"Basket","2": "Table","3": "Chair"}}' \ 
-   "http://localhost:9090/order" -H "Content-Type
+   "http://localhost:9090/order" -H "Content-Type:application/json"
 ```
    The order service sends a response similar to the following:
 ```json
@@ -284,13 +284,13 @@ Once you are done with the development, you can deploy the service using any of 
    $ ballerina build inventory_services
 ```
 
-- Once the balx files are created inside the target folder, you can run them with the following commands. 
+- Once the .balx files are created inside the target folder, navigate to the target folder and run them with the following commands. 
 
 ```
-   $ ballerina build order_services.balx
+   $ ballerina run order_services.balx
 ```
 ```
-   $ ballerina build inventory_services.balx
+   $ ballerina run inventory_services.balx
 ```
 
 - The successful execution of the service will show us the following output. 
@@ -322,7 +322,7 @@ import ballerinax/docker;
     tag:"v1.0"
 }
 
-@docker:{Expose}
+@docker:Expose{}
 endpoint http:ServiceEndpoint orderServiceEP {
     port:9090
 };

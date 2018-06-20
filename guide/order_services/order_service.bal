@@ -94,8 +94,7 @@ service<http:Service> Order bind orderServiceEP {
             error err => {
                 http:Response outResponse;
                 // Send bad request message to the client if request don't contain order items
-                outResponse.setTextPayload("Error : Please check the input json payload"
-                );
+                outResponse.setPayload("Error : Please check the input json payload");
                 outResponse.statusCode = 400;
                 _ = httpConnection->respond(outResponse);
                 done;
@@ -106,7 +105,7 @@ service<http:Service> Order bind orderServiceEP {
         // Set the outgoing request JSON payload with items
         outRequest.setJsonPayload(items);
         // Call the inventory backend through the circuit breaker
-        var response = circuitBreakerEP->post("/inventory", request = outRequest);
+        var response = circuitBreakerEP->post("/inventory", outRequest);
         match response {
             http:Response outResponse => {
                 // Send response to the client if the order placement was successful
@@ -118,7 +117,7 @@ service<http:Service> Order bind orderServiceEP {
                 // If inventory backend contain errors forward the error message to client
                 log:printInfo("Inventory service returns an error :" + err.message);
                 http:Response outResponse;
-                outResponse.setJsonPayload({ "Error": "Inventory Service did not respond",
+                outResponse.setPayload({ "Error": "Inventory Service did not respond",
                         "Error_message": err.message });
                 _ = httpConnection->respond(outResponse);
                 done;

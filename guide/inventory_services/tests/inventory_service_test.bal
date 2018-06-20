@@ -44,7 +44,7 @@ function testInventoryService() {
     json requestJson = { "1": "Basket", "2": "Table", "3": "Chair" };
     req.setJsonPayload(requestJson);
     // Send the request to service and get the response
-    http:Response resp = check httpEndpoint->post("/", request = req);
+    http:Response resp = check httpEndpoint->post("/", req);
     json jsonResponse = check resp.getJsonPayload();
     test:assertEquals(resp.statusCode, 200, msg =
         "Inventory service didnot respond with 200 OK signal");
