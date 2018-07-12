@@ -45,7 +45,7 @@ function testOrderService() {
     // Test the inventory resource
     // Prepare order with sample items
     json requestJson = { "items": { "1": "Basket", "2": "Table", "3": "Chair" } };
-    request.setJsonPayload(requestJson);
+    request.setJsonPayload(untaint requestJson);
     // Send the request to service and get the response
     response = check httpEndpoint->post("/", request);
     json jsonResponse = check response.getJsonPayload();

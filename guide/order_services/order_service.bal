@@ -53,7 +53,8 @@ endpoint http:Client circuitBreakerEP {
     circuitBreaker: {
         rollingWindow: {
             timeWindowMillis: 10000,
-            bucketSizeMillis: 2000
+            bucketSizeMillis: 2000,
+            requestVolumeThreshold: 0
         },
         // Failure threshold should be in between 0 and 1
         failureThreshold: 0.2,
@@ -103,14 +104,14 @@ service<http:Service> Order bind orderServiceEP {
         string orderItems = items.toString();
         log:printInfo("Recieved Order : " + orderItems);
         // Set the outgoing request JSON payload with items
-        outRequest.setJsonPayload(items);
+        outRequest.setJsonPayload(untaint items);
         // Call the inventory backend through the circuit breaker
         var response = circuitBreakerEP->post("/inventory", outRequest);
         match response {
             http:Response outResponse => {
                 // Send response to the client if the order placement was successful
 
-                outResponse.setTextPayload("Order Placed : " + orderItems);
+                outResponse.setTextPayload("Order Placed : " + untaint orderItems);
                 _ = httpConnection->respond(outResponse);
             }
             error err => {

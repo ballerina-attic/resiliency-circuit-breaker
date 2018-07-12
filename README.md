@@ -64,14 +64,14 @@ resiliency-circuit-breaker
 
 - Create the above directories in your local machine and also create empty `.bal` files.
 
-- Then open the terminal and navigate to `restful-service/guide` and run Ballerina project initializing toolkit.
+- Then open the terminal and navigate to `resiliency-circuit-breaker/guide` and run Ballerina project initializing toolkit.
 ```bash
    $ ballerina init
 ```
 
-The `orderServices` is the service to handle the client orders. Order service is configured with a circuit breaker to deal with the potentially-failing remote inventory management service.  
+The order service is the service which handles the client orders. Order service is configured with a circuit breaker to deal with the potentially-failing remote inventory management service.
 
-The `inventoryServices` be an independent web service that accepts orders via HTTP POST method from `orderService` and sends the availability of order items.
+The inventory service is an independent web service that accepts orders via HTTP POST method from the order service and sends the availability of order items.
 
 ### Developing the Ballerina services with circuit breaker
 
@@ -83,9 +83,14 @@ endpoint http:Client circuitBreakerEP {
     // The 'circuitBreaker' term incorporate circuit breaker pattern to the client endpoint
     // Circuit breaker will immediately drop remote calls if the endpoint exceeded the failure threshold
     circuitBreaker: {
+        // Failure calculation window.
         rollingWindow: {
+            // Time period in milliseconds for which the failure threshold is calculated.
             timeWindowMillis: 10000,
-            bucketSizeMillis: 2000
+            // The granularity at which the time window slides. This is measured in milliseconds.
+            bucketSizeMillis: 2000,
+            // Minimum number of requests in a `RollingWindow` that will trip the circuit.
+            requestVolumeThreshold: 0
         },
         // Failure threshold should be in between 0 and 1
         failureThreshold: 0.2,
@@ -95,8 +100,7 @@ endpoint http:Client circuitBreakerEP {
         statusCodes: [400, 404, 500]
     },
     // HTTP client could be any HTTP endpoint that have risk of failure
-    url: "http://localhost:9092"
-    ,
+    url: "http://localhost:9092",
     timeoutMillis: 2000
 };
 ```
@@ -118,9 +122,14 @@ endpoint http:Client circuitBreakerEP {
     // The 'circuitBreaker' term incorporate CB pattern to the client endpoint
     // Circuit breaker drop remote calls if the endpoint exceeded the failure threshold
     circuitBreaker: {
+        // Failure calculation window.
         rollingWindow: {
+            // Time period in milliseconds for which the failure threshold is calculated.
             timeWindowMillis: 10000,
-            bucketSizeMillis: 2000
+            // The granularity at which the time window slides. This is measured in milliseconds.
+            bucketSizeMillis: 2000,
+            // Minimum number of requests in a `RollingWindow` that will trip the circuit.
+            requestVolumeThreshold: 0
         },
         // Failure threshold should be in between 0 and 1
         failureThreshold: 0.2,
@@ -130,8 +139,7 @@ endpoint http:Client circuitBreakerEP {
         statusCodes: [400, 404, 500]
     },
     // HTTP client could be any HTTP endpoint that have risk of failure
-    url: "http://localhost:9092"
-    ,
+    url: "http://localhost:9092",
     timeoutMillis: 2000
 };
 
@@ -171,14 +179,14 @@ service<http:Service> Order bind orderServiceEP {
         string orderItems = items.toString();
         log:printInfo("Recieved Order : " + orderItems);
         // Set the outgoing request JSON payload with items
-        outRequest.setJsonPayload(items);
+        outRequest.setJsonPayload(untaint items);
         // Call the inventory backend through the circuit breaker
         var response = circuitBreakerEP->post("/inventory", outRequest);
         match response {
             http:Response outResponse => {
                 // Send response to the client if the order placement was successful
 
-                outResponse.setPayload("Order Placed : " + orderItems);
+                outResponse.setPayload("Order Placed : " + untaint orderItems);
                 _ = httpConnection->respond(outResponse);
             }
             error err => {
@@ -210,14 +218,14 @@ Refer to the complete implementation of the inventory management service in the 
 You can run the services that you developed above, in your local environment. Open your terminal and navigate to `resiliency-circuit-breaker/guide`, and execute the following command.
 
 ```bash
-    $ ballerina run inventory_services/
+    $ ballerina run inventory_services
 ```
 
 ```bash
-   $ ballerina run order_services/
+   $ ballerina run order_services
 ```
 
-- Invoke the orderService by sending an order via the HTTP POST method. 
+- Invoke the order service by sending an order via the HTTP POST method.
 ``` bash
    curl -v -X POST -d '{ "items":{"1":"Basket","2": "Table","3": "Chair"}}' \
    "http://localhost:9090/order" -H "Content-Type:application/json"
@@ -229,7 +237,7 @@ You can run the services that you developed above, in your local environment. Op
 ```
 - Shutdown the inventory service. Your order service now has a broken remote endpoint for the inventory service.
 
-- Invoke the orderService by sending an order via HTTP method.
+- Invoke the order service by sending an order via HTTP method.
 ``` bash
    curl -v -X POST -d '{ "items":{"1":"Basket","2": "Table","3": "Chair"}}' \ 
    "http://localhost:9090/order" -H "Content-Type:application/json"
@@ -240,7 +248,7 @@ You can run the services that you developed above, in your local environment. Op
 ```
    This shows that the order service attempted to call the inventory service and found that the inventory service is not available.
 
-- Invoke the orderService again soon after sending the previous request.
+- Invoke the order service again soon after sending the previous request.
 ``` bash
    curl -v -X POST -d '{ "items":{"1":"Basket","2": "Table","3": "Chair"}}' \ 
    "http://localhost:9090/order" -H "Content-Type
@@ -304,56 +312,131 @@ Once you are done with the development, you can deploy the service using any of 
 ```
 ### Deploying on Docker
 
-You can run the services that we developed above as a docker container. As Ballerina platform offers native support for running ballerina programs on containers, you just need to put the corresponding docker annotations on your service code. 
-Let's see how we can deploy the order_service we developed above on docker. When invoking this service make sure that the inventory_service is also up and running. 
+You can run the services that we developed above as a Docker container. As Ballerina platform offers native support for running ballerina programs on containers, you just need to put the corresponding Docker annotations on your service code.
+Let's see how we can deploy the order service and inventory service we developed above on Docker.
 
-- In our order_service, we need to import  `` import ballerinax/docker; `` and use the annotation `` @docker:Config `` as shown below to enable docker image generation during the build time. 
+- In our order service and inventory service, we need to import  `ballerinax/docker;` and use the annotations `@docker:Config` , `@docker:Expose` as shown below to provide the basic Docker image configurations and expose the listener port.
 
 ##### order_service.bal
 ```ballerina
-package orderServices;
-
 // Other imports
 import ballerinax/docker;
 
 @docker:Config {
-    registry:"ballerina.guides.io",
-    name:"order_service",
-    tag:"v1.0"
+    registry: "ballerina.guides.io",
+    name: "order_service",
+    tag: "v1.0"
 }
 
 @docker:Expose{}
-endpoint http:ServiceEndpoint orderServiceEP {
-    port:9090
+endpoint http:Listener orderServiceEP {
+    port: 9090
 };
 
-// http:ClientEndpoint definition for Circuit breaker
+// http:Client definition for Circuit breaker
 
 @http:ServiceConfig {
-    basePath:"/order"
+    basePath: "/order"
 }
 service<http:Service> Order bind orderServiceEP {
    
 ``` 
 
+##### inventory_service.bal
+```ballerina
+// Other imports
+import ballerinax/docker;
+
+@docker:Config {
+    registry: "ballerina.guides.io",
+    name: "inventory_service",
+    tag: "v1.0"
+}
+
+@docker:Expose{}
+endpoint http:Listener inventoryEP {
+    port: 9092
+};
+
+@http:ServiceConfig {
+    basePath: "/inventory"
+}
+service<http:Service> InventoryService bind inventoryEP {
+
+```
+
 - Now you can build a Ballerina executable archive (.balx) of the service that we developed above, using the following command. It points to the service file that we developed above and it will create an executable binary out of that. 
-This will also create the corresponding docker image using the docker annotations that you have configured above. Navigate to the `<SAMPLE_ROOT>/src/` folder and run the following command.  
+This will also create the corresponding Docker image using the Docker annotations that you have configured above. Navigate to the `<SAMPLE_ROOT>/guide/` folder and run the following command.
+
+```
+  $ballerina build inventory_services
+
+  Run following command to start Docker container:
+  docker run -d -p 9092:9092 ballerina.guides.io/inventory_service:v1.0
+```
   
+- Once you successfully build the Docker image for inventory service, run it with the `docker run` command that is shown in the previous step.
+
+```
+    docker run -d -p 9092:9092 ballerina.guides.io/inventory_service:v1.0
+```
+
+- Here we run the Docker image with flag `-p <host_port>:<container_port>` so that we use the host port 9092 and the container port 9092. Therefore you can access the service through the host port.
+- Once you successfully start inventory service from above command, execute `docker ps` command in the terminal and take corresponding Docker process id for the inventory service. Then execute execute `docker ps <PROCESS_ID>` and take IP address of the inventory service container.
+
+```
+   $ docker ps
+```
+
+```
+   $ docker inspect <PROCESS_ID>
+```
+
+- Then update the url of the ``circuitBreakerEP`` of order service with the inventory service container IP address
+
+```ballerina
+endpoint http:Client circuitBreakerEP {
+
+    // The 'circuitBreaker' term incorporate circuit breaker pattern to the client endpoint
+    // Circuit breaker will immediately drop remote calls if the endpoint exceeded the failure threshold
+    circuitBreaker: {
+        // Failure calculation window.
+        rollingWindow: {
+            // Time period in milliseconds for which the failure threshold is calculated.
+            timeWindowMillis: 10000,
+            // The granularity at which the time window slides. This is measured in milliseconds.
+            bucketSizeMillis: 2000,
+            // Minimum number of requests in a `RollingWindow` that will trip the circuit.
+            requestVolumeThreshold: 0
+        },
+        // Failure threshold should be in between 0 and 1
+        failureThreshold: 0.2,
+        // Reset timeout for circuit breaker should be in milliseconds
+        resetTimeMillis: 10000,
+        // httpStatusCodes will have array of http error codes tracked by the circuit breaker
+        statusCodes: [400, 404, 500]
+    },
+    // HTTP client could be any HTTP endpoint that have risk of failure
+    url: "http://<IP_ADDRESS_OF_INVENTORY_SERVICE_CONTAINER>:9092",
+    timeoutMillis: 2000
+};
+```
+
+- Navigate to the `<SAMPLE_ROOT>/guide/` folder and run the following command.
+
 ```
   $ballerina build order_services
   
-  Run following command to start docker container: 
+  Run following command to start Docker container:
   docker run -d -p 9090:9090 ballerina.guides.io/order_service:v1.0
 ```
-- Once you successfully build the docker image, you can run it with the `` docker run`` command that is shown in the previous step.  
+- Once you successfully build the Docker image for order service, you can run it with the `docker run` command that is shown in the previous step.
 
 ```   
     docker run -d -p 9090:9090 ballerina.guides.io/order_services:v1.0
 ```
 
-Here we run the docker image with flag`` -p <host_port>:<container_port>`` so that we use the host port 9090 and the container port 9090. Therefore you can access the service through the host port. 
-
-- Verify docker container is running with the use of `` $ docker ps``. The status of the docker container should be shown as 'Up'. 
+- Verify state of the Docker container by executing `docker ps`. The status of the Docker container should be shown as 'Up'.
 - You can access the service using the same curl commands that we've used above. 
  
 ```
@@ -365,17 +448,49 @@ Here we run the docker image with flag`` -p <host_port>:<container_port>`` so th
 ### Deploying on Kubernetes
 
 - You can run the services that we developed above, on Kubernetes. The Ballerina language offers native support for running a ballerina programs on Kubernetes, 
-with the use of Kubernetes annotations that you can include as part of your service code. Also, it will take care of the creation of the docker images. 
-So you don't need to explicitly create docker images prior to deploying it on Kubernetes.   
-Let's see how we can deploy the order_service we developed above on kubernetes. When invoking this service make sure that the inventory_service is also up and running. 
+with the use of Kubernetes annotations that you can include as part of your service code. Also, it will take care of the creation of the Docker images.
+So you don't need to explicitly create Docker images prior to deploying it on Kubernetes.
+Let's see how we can deploy the inventory service and order service we developed above on Kubernetes.
 
-- We need to import `` import ballerinax/kubernetes; `` and use `` @kubernetes `` annotations as shown below to enable kubernetes deployment for the service we developed above. 
+- We need to import `ballerinax/kubernetes;` and use `@kubernetes` annotations as shown below to enable Kubernetes deployment for the service we developed above.
+
+##### inventory_service.bal
+
+```ballerina
+// Other imports
+import ballerinax/kubernetes;
+
+@kubernetes:Ingress {
+    hostname: "ballerina.guides.io",
+    name: "ballerina-guides-inventory-service",
+    path: "/"
+}
+
+@kubernetes:Service {
+    serviceType: "NodePort",
+    name: "ballerina-guides-inventory-service"
+}
+
+@kubernetes:Deployment {
+    image: "ballerina.guides.io/inventory_service:v1.0",
+    name: "ballerina-guides-inventory-service"
+}
+
+endpoint http:Listener inventoryEP {
+    port: 9092
+};
+
+@http:ServiceConfig {
+  basePath: "/inventory"
+}
+service<http:Service> InventoryService bind inventoryEP {
+```
 
 ##### order_service.bal
 
-```ballerina
-package orderServices;
+- Make sure to update the circuit breaker endpoint with the inventory services url. In this case it should be http://ballerina-guides-inventory-service:9092
 
+```ballerina
 // Other imports
 import ballerinax/kubernetes;
 
@@ -399,7 +514,28 @@ endpoint http:ServiceEndpoint orderServiceEP {
     port:9090
 };
 
-// http:ClientEndpoint definition for Circuit breaker
+endpoint http:Client circuitBreakerEP {
+
+    // The 'circuitBreaker' term incorporate circuit breaker pattern to the client endpoint
+    // Circuit breaker will immediately drop remote calls if the endpoint exceeded the failure threshold
+    circuitBreaker: {
+        rollingWindow: {
+            timeWindowMillis: 10000,
+            bucketSizeMillis: 2000,
+            requestVolumeThreshold: 0
+        },
+        // Failure threshold should be in between 0 and 1
+        failureThreshold: 0.2,
+        // Reset timeout for circuit breaker should be in milliseconds
+        resetTimeMillis: 10000,
+        // httpStatusCodes will have array of http error codes tracked by the circuit breaker
+        statusCodes: [400, 404, 500]
+    },
+    // HTTP client could be any HTTP endpoint that have risk of failure
+    url: "http://ballerina-guides-inventory-service:9092"
+    ,
+    timeoutMillis: 2000
+};
 
 @http:ServiceConfig {
     basePath:"/order"
@@ -407,27 +543,37 @@ endpoint http:ServiceEndpoint orderServiceEP {
 service<http:Service> orderService bind orderServiceEP {
         
 ``` 
-- Here we have used ``  @kubernetes:Deployment `` to specify the docker image name which will be created as part of building this service. 
-- We have also specified `` @kubernetes:Service `` so that it will create a Kubernetes service which will expose the Ballerina service that is running on a Pod.  
-- In addition we have used `` @kubernetes:Ingress `` which is the external interface to access your service (with path `` /`` and host name ``ballerina.guides.io``)
+- Here we have used `@kubernetes:Deployment` to specify the Docker image name which will be created as part of building this service.
+- We have also specified `@kubernetes:Service` so that it will create a Kubernetes service which will expose the Ballerina service that is running on a Pod.
+- In addition we have used `@kubernetes:Ingress` which is the external interface to access your service (with path `/` and host name `ballerina.guides.io`)
 
 - Now you can build a Ballerina executable archive (.balx) of the service that we developed above, using the following command. It points to the service file that we developed above and it will create an executable binary out of that. 
-This will also create the corresponding docker image and the Kubernetes artifacts using the Kubernetes annotations that you have configured above.
+This will also create the corresponding Docker image and the Kubernetes artifacts using the Kubernetes annotations that you have configured above.
   
 ```
-  $ballerina build orderServices
+  $ballerina build inventory_services
+
+  Run following command to deploy Kubernetes artifacts:
+  kubectl apply -f target/kubernetes/inventory_services/
+
+  $ballerina build order_services
   
-  Run following command to deploy kubernetes artifacts:  
-  kubectl apply -f ./target/orderServices/kubernetes
+  Run following command to deploy Kubernetes artifacts:
+  kubectl apply -f target/kubernetes/order_services/
  
 ```
 
-- You can verify that the docker image that we specified in `` @kubernetes:Deployment `` is created, by using `` docker ps images ``. 
-- Also the Kubernetes artifacts related our service, will be generated in `` ./target/orderServices/kubernetes``. 
+- You can verify that the Docker image that we specified in `@kubernetes:Deployment` is created, by using `docker ps images`.
+- Also the Kubernetes artifacts related to the services, will be generated in `target/kubernetes/` directory.
 - Now you can create the Kubernetes deployment using:
 
 ```
- $ kubectl apply -f ./target/orderServices/kubernetes 
+ $ kubectl apply -f target/kubernetes/inventory_services/
+   deployment.extensions "ballerina-guides-inventory-service" created
+   ingress.extensions "ballerina-guides-inventory-service" created
+   service "ballerina-guides-inventory-service" created
+
+ $ kubectl apply -f ./target/kubernetes/order_services/
    deployment.extensions "ballerina-guides-order-service" created
    ingress.extensions "ballerina-guides-order-service" created
    service "ballerina-guides-order-service" created
@@ -453,6 +599,8 @@ Node Port:
 ```
 Ingress:
 
+- Make sure that Nginx backend and controller deployed as mentioned in [here](https://github.com/ballerinax/kubernetes/tree/master/samples#setting-up-nginx).
+
 Add `/etc/hosts` entry to match hostname. 
 ``` 
 127.0.0.1 ballerina.guides.io
@@ -462,8 +610,45 @@ Access the service
 
 ``` 
  curl -v -X POST -d '{ "items":{"1":"Basket","2": "Table","3": "Chair"}}' \
- "http://ballerina.guides.io/order" -H "Content-Type:application/json" 
+ "http://ballerina.guides.io/order" -H "Content-Type:application/json"
     
+```
+
+- Then Let's shutdown the inventory service with below command.
+
+```
+ $ kubectl delete -f target/kubernetes/inventory_services/
+   deployment.extensions "ballerina-guides-inventory-service" deleted
+   ingress.extensions "ballerina-guides-inventory-service" deleted
+   service "ballerina-guides-inventory-service" deleted
+```
+
+Once the inventory service is terminated, The order service has a broken remote endpoint for the inventory service.
+Verify whether inventory service pod is terminated with below command.
+
+```
+ $ kubectl get pods
+```
+
+- Invoke the order service by sending an order via HTTP method.
+``` bash
+   curl -v -X POST -d '{ "items":{"1":"Basket","2": "Table","3": "Chair"}}' \
+  "http://<Minikube_host_IP>:<Node_Port>/order" -H "Content-Type:application/json"
+```
+The order service sends a response similar to the following:
+```json
+   {"Error":"Inventory Service did not respond","Error_message":"ballerina-guides-inventory-service"}
+```
+This shows that the order service attempted to call the inventory service and found that the inventory service is not available.
+
+- Invoke the order service again soon after sending the previous request.
+``` bash
+   curl -v -X POST -d '{ "items":{"1":"Basket","2": "Table","3": "Chair"}}' \
+  "http://<Minikube_host_IP>:<Node_Port>/order" -H "Content-Type:application/json"
+```
+   Now the Circuit Breaker is activated since the order service knows that the inventory service is unavailable. This time the order service responds with the following error message.
+```json
+   {"Error":"Inventory Service did not respond","Error_message":"Upstream service unavailable. Requests to upstream service will be suspended for 4707 milliseconds."}
 ```
 
 ## Observability 
@@ -507,7 +692,7 @@ Follow the following steps to use tracing with Ballerina.
    reporter.max.buffer.spans=1000
 ```
 
-- Run Jaeger docker image using the following command
+- Run Jaeger Docker image using the following command
 ```bash
    $ docker run -d -p5775:5775/udp -p6831:6831/udp -p6832:6832/udp -p5778:5778 -p16686:16686 \
    -p14268:14268 jaegertracing/all-in-one:latest
@@ -556,9 +741,9 @@ Follow the below steps to set up Prometheus and view metrics for Ballerina restf
          - targets: ['172.17.0.1:9797']
 ```
 
-   NOTE : Replace `172.17.0.1` if your local docker IP differs from `172.17.0.1`
+   NOTE : Replace `172.17.0.1` if your local Docker IP differs from `172.17.0.1`
    
-- Run the Prometheus docker image using the following command
+- Run the Prometheus Docker image using the following command
 ```
    $ docker run -p 19090:9090 -v /tmp/prometheus.yml:/etc/prometheus/prometheus.yml \
    prom/prometheus
