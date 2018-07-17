@@ -23,7 +23,7 @@ endpoint http:Client httpEndpoint {
 
 function beforeFunction() {
     // Start the inventory service
-    _ = test:startServices("inventory_services");
+    //_ = test:startServices("inventory_services");
 }
 
 function afterFunction() {
