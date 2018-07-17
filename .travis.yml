@@ -42,5 +42,4 @@ script:
 - ballerina init
 
 # Run tests
-- ballerina test inventory_services
-- ballerina test order_services
+- ballerina test
