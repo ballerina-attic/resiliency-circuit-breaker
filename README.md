@@ -454,6 +454,8 @@ Let's see how we can deploy the inventory service and order service we developed
 
 - We need to import `ballerinax/kubernetes;` and use `@kubernetes` annotations as shown below to enable Kubernetes deployment for the service we developed above.
 
+> NOTE: Linux users can use Minikube to try this out locally.
+
 ##### inventory_service.bal
 
 ```ballerina
@@ -547,6 +549,10 @@ service<http:Service> orderService bind orderServiceEP {
 - We have also specified `@kubernetes:Service` so that it will create a Kubernetes service which will expose the Ballerina service that is running on a Pod.
 - In addition we have used `@kubernetes:Ingress` which is the external interface to access your service (with path `/` and host name `ballerina.guides.io`)
 
+If you are using Minikube, you need to set a couple of additional attributes to the `@kubernetes:Deployment` annotation.
+- `dockerCertPath` - The path to the certificates directory of Minikube (e.g., `/home/ballerina/.minikube/certs`).
+- `dockerHost` - The host for the running cluster (e.g., `tcp://192.168.99.100:2376`). The IP address of the cluster can be found by running the `minikube ip` command.
+
 - Now you can build a Ballerina executable archive (.balx) of the service that we developed above, using the following command. It points to the service file that we developed above and it will create an executable binary out of that. 
 This will also create the corresponding Docker image and the Kubernetes artifacts using the Kubernetes annotations that you have configured above.
   
@@ -595,13 +601,14 @@ Node Port:
 ```
   curl -v -X POST -d '{ "items":{"1":"Basket","2": "Table","3": "Chair"}}' \
   "http://<Minikube_host_IP>:<Node_Port>/order" -H "Content-Type:application/json"  
-
 ```
+If you are using Minikube, you should use the IP address of the Minikube cluster obtained by running the `minikube ip` command. The port should be the node port given when running the `kubectl get services` command.
+
 Ingress:
 
 - Make sure that Nginx backend and controller deployed as mentioned in [here](https://github.com/ballerinax/kubernetes/tree/master/samples#setting-up-nginx).
 
-Add `/etc/hosts` entry to match hostname. 
+Add `/etc/hosts` entry to match hostname. For Minikube, the IP address should be the IP address of the cluster.
 ``` 
 127.0.0.1 ballerina.guides.io
 ```
