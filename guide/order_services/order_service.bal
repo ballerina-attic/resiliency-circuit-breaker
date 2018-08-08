@@ -42,6 +42,7 @@ import ballerina/http;
 //    name:"ballerina-guides-order-service"
 //}
 
+//@docker:Expose{}
 endpoint http:Listener orderServiceEP {
     port: 9090
 };
