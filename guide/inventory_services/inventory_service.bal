@@ -41,6 +41,7 @@ import ballerina/http;
 //    name:"ballerina-guides-inventory-service"
 //}
 
+//@docker:Expose{}
 endpoint http:Listener inventoryEP {
     port: 9092
 };

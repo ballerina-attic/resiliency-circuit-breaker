@@ -433,7 +433,7 @@ endpoint http:Client circuitBreakerEP {
 - Once you successfully build the Docker image for order service, you can run it with the `docker run` command that is shown in the previous step.
 
 ```   
-    docker run -d -p 9090:9090 ballerina.guides.io/order_services:v1.0
+    docker run -d -p 9090:9090 ballerina.guides.io/order_service:v1.0
 ```
 
 - Verify state of the Docker container by executing `docker ps`. The status of the Docker container should be shown as 'Up'.
@@ -560,12 +560,12 @@ This will also create the corresponding Docker image and the Kubernetes artifact
   $ballerina build inventory_services
 
   Run following command to deploy Kubernetes artifacts:
-  kubectl apply -f target/kubernetes/inventory_services/
+  kubectl apply -f target/kubernetes/inventory_services
 
   $ballerina build order_services
   
   Run following command to deploy Kubernetes artifacts:
-  kubectl apply -f target/kubernetes/order_services/
+  kubectl apply -f target/kubernetes/order_services
  
 ```
 
@@ -574,12 +574,12 @@ This will also create the corresponding Docker image and the Kubernetes artifact
 - Now you can create the Kubernetes deployment using:
 
 ```
- $ kubectl apply -f target/kubernetes/inventory_services/
+ $ kubectl apply -f target/kubernetes/inventory_services
    deployment.extensions "ballerina-guides-inventory-service" created
    ingress.extensions "ballerina-guides-inventory-service" created
    service "ballerina-guides-inventory-service" created
 
- $ kubectl apply -f ./target/kubernetes/order_services/
+ $ kubectl apply -f ./target/kubernetes/order_services
    deployment.extensions "ballerina-guides-order-service" created
    ingress.extensions "ballerina-guides-order-service" created
    service "ballerina-guides-order-service" created
@@ -600,9 +600,20 @@ Node Port:
  
 ```
   curl -v -X POST -d '{ "items":{"1":"Basket","2": "Table","3": "Chair"}}' \
-  "http://<Minikube_host_IP>:<Node_Port>/order" -H "Content-Type:application/json"  
+  "http://localhost:<Node_Port>/order" -H "Content-Type:application/json"  
 ```
+
 If you are using Minikube, you should use the IP address of the Minikube cluster obtained by running the `minikube ip` command. The port should be the node port given when running the `kubectl get services` command.
+```bash
+    $ minikube ip
+    192.168.99.100
+
+    $ kubectl get services
+    NAME                               TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)          AGE
+    ballerina-guides-order-service   NodePort    10.100.226.129     <none>        9090:30659/TCP   3h
+```
+
+The endpoint URL for the above case would be as follows: `http://192.168.99.100:30659/order`
 
 Ingress:
 
