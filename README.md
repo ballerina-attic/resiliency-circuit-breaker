@@ -232,8 +232,7 @@ You can run the services that you developed above, in your local environment. Op
 ```
    The order service sends a response similar to the following:
 ```
-   Order Placed : {"Status":"Order Available in Inventory", \ 
-   "items":{"1":"Basket","2":"Table","3":"Chair"}}
+   Order Placed : {"1":"Basket","2":"Table","3":"Chair"}
 ```
 - Shutdown the inventory service. Your order service now has a broken remote endpoint for the inventory service.
 
@@ -244,7 +243,7 @@ You can run the services that you developed above, in your local environment. Op
 ```
    The order service sends a response similar to the following:
 ```json
-   {"Error":"Inventory Service did not respond","Error_message":"Connection refused, localhost-9092"}
+   {"Error":"Inventory Service did not respond", "Error_message":"Connection refused: localhost/127.0.0.1:9092"}
 ```
    This shows that the order service attempted to call the inventory service and found that the inventory service is not available.
 
