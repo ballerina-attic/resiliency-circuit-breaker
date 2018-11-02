@@ -65,8 +65,7 @@ endpoint http:Client circuitBreakerEP {
         statusCodes: [400, 404, 500]
     },
     // HTTP client could be any HTTP endpoint that have risk of failure
-    url: "http://localhost:9092"
-    ,
+    url: "http://localhost:9092",
     timeoutMillis: 2000
 };
 
@@ -105,23 +104,18 @@ service<http:Service> Order bind orderServiceEP {
         string orderItems = items.toString();
         log:printInfo("Recieved Order : " + orderItems);
         // Set the outgoing request JSON payload with items
-        outRequest.setJsonPayload(untaint items);
+        outRequest.setPayload(untaint items);
         // Call the inventory backend through the circuit breaker
         var response = circuitBreakerEP->post("/inventory", outRequest);
         match response {
             http:Response outResponse => {
-                // Send response to the client if the order placement was successful
-
-                outResponse.setTextPayload("Order Placed : " + untaint orderItems);
-                _ = httpConnection->respond(outResponse);
+                _ = httpConnection->respond("Order Placed : " + untaint orderItems);
             }
             error err => {
                 // If inventory backend contain errors forward the error message to client
                 log:printInfo("Inventory service returns an error :" + err.message);
-                http:Response outResponse;
-                outResponse.setPayload({ "Error": "Inventory Service did not respond",
+                _ = httpConnection->respond({ "Error": "Inventory Service did not respond",
                         "Error_message": err.message });
-                _ = httpConnection->respond(outResponse);
                 done;
             }
         }
