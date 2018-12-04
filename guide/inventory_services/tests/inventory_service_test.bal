@@ -17,9 +17,7 @@
 import ballerina/http;
 import ballerina/test;
 
-endpoint http:Client httpEndpoint {
-    url: "http://localhost:9092/inventory"
-};
+http:Client httpEndpoint = new("http://localhost:9092/inventory");
 
 function beforeFunction() {
     // Start the inventory service
@@ -28,29 +26,37 @@ function beforeFunction() {
 
 function afterFunction() {
     // Stop the inventory service
-    test:stopServices("inventory_services");
+    //test:stopServices("inventory_services");
 }
 
-@test:Config {
-    before: "beforeFunction",
-    after: "afterFunction"
-}
+//@test:Config {
+//    before: "beforeFunction",
+//    after: "afterFunction"
+//}
 function testInventoryService() {
     // Initialize the empty http request and response
-    http:Request req;
+    http:Request req = new;
 
     // Test the inventory resource
     // Prepare order with sample items
     json requestJson = { "1": "Basket", "2": "Table", "3": "Chair" };
     req.setJsonPayload(requestJson);
     // Send the request to service and get the response
-    http:Response resp = check httpEndpoint->post("/", req);
-    json jsonResponse = check resp.getJsonPayload();
-    test:assertEquals(resp.statusCode, 200, msg =
-        "Inventory service didnot respond with 200 OK signal");
-    // Test the responses from the service with the original test data
-    test:assertEquals(jsonResponse.Status.toString(), "Order Available in Inventory",
-        msg = "respond mismatch");
+    var resp = httpEndpoint->post("/", req);
+    if (resp is http:Response) {
+        var jsonResponse = resp.getJsonPayload();
+        if (jsonResponse is json) {
+            test:assertEquals(resp.statusCode, 200, msg =
+                "Inventory service didnot respond with 200 OK signal");
+            // Test the responses from the service with the original test data
+            test:assertEquals(jsonResponse.Status.toString(), "Order Available in Inventory",
+                msg = "respond mismatch");
+        } else {
+            test:assertFail(msg = "Failed to parse json message:");
+        }
+    } else {
+        test:assertFail(msg = "Error occurred while sending message:");
+    }
 }
 
 

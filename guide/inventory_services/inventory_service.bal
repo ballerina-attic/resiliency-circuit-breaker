@@ -42,27 +42,29 @@ import ballerina/http;
 //}
 
 //@docker:Expose{}
-endpoint http:Listener inventoryEP {
-    port: 9092
-};
+listener http:Listener inventoryListener = new(9092);
 
 @http:ServiceConfig { basePath: "/inventory" }
-service<http:Service> InventoryService bind inventoryEP {
+service InventoryService on inventoryListener {
     @http:ResourceConfig {
         methods: ["POST"],
         path: "/"
     }
-    inventoryResource(endpoint httpConnection, http:Request request) {
+    resource function inventoryResource(http:Caller caller, http:Request request) {
         // Initialize the response message that needs to send back to client
-        http:Response response;
+        http:Response response = new;
         // Extract the items list from the request JSON payload
-        json items = check <json>request.getJsonPayload();
-        string itemsList = items.toString();
-        log:printInfo("Checking the order items : " + itemsList);
-        // Prepare the response message
-        json responseJson = { "Status": "Order Available in Inventory", "items": items };
-        response.setPayload(untaint responseJson);
-        // Send the response to the client
-        _ = httpConnection->respond(response);
+        var items = json.create(request.getJsonPayload());
+        if (items is json) {
+            string itemsList = items.toString();
+            log:printInfo("Checking the order items : " + itemsList);
+            // Prepare the response message
+            json responseJson = { "Status": "Order Available in Inventory", "items": items };
+            response.setPayload(untaint responseJson);
+            // Send the response to the client
+            _ = caller->respond(response);
+        } else if (items is error) {
+            log:printError("Cannot parse incoming json", err = items);
+        }
     }
 }
