@@ -29,10 +29,10 @@ function afterFunction() {
     //test:stopServices("inventory_services");
 }
 
-//@test:Config {
-//    before: "beforeFunction",
-//    after: "afterFunction"
-//}
+@test:Config {
+    before: "beforeFunction",
+    after: "afterFunction"
+}
 function testInventoryService() {
     // Initialize the empty http request and response
     http:Request req = new;

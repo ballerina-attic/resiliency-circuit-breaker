@@ -54,7 +54,7 @@ service InventoryService on inventoryListener {
         // Initialize the response message that needs to send back to client
         http:Response response = new;
         // Extract the items list from the request JSON payload
-        var items = json.create(request.getJsonPayload());
+        var items = json.convert(request.getJsonPayload());
         if (items is json) {
             string itemsList = items.toString();
             log:printInfo("Checking the order items : " + itemsList);

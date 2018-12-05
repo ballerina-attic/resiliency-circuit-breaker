@@ -100,7 +100,6 @@ http:Client circuitBreakerEP = new("http://localhost:9092", config = {
     basePath: "/order"
 }
 service Order on orderServiceListener {
-
     @http:ResourceConfig {
         methods: ["POST"],
         path: "/"
