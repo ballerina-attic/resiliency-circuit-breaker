@@ -61,13 +61,11 @@ http:Client circuitBreakerEP = new("http://localhost:9092", config = {
                 // This is measured in milliseconds.
                 // The `RollingWindow` is divided into buckets
                 //  and slides by these increments.
-                // For example, if this `timeWindowMillis` is set to
-                // 10000 milliseconds and `bucketSizeMillis` 2000.
-                // Then `RollingWindow` breaks into sub windows with
+                // For example, if this timeWindowMillis is set to
+                // 10000 milliseconds and bucketSizeMillis is set to 2000,
+                // RollingWindow breaks into sub windows with
                 // 2-second buckets and stats are collected with
-                // respect to the buckets. As time rolls a new bucket
-                // will be appended to the end of the window and the
-                // old bucket will be removed.
+                // respect to the buckets
                 bucketSizeMillis: 2000,
 
                 // Minimum number of requests in a `RollingWindow`
@@ -119,7 +117,10 @@ service Order on orderServiceListener {
             // Send bad request message to the client if request don't contain order items
             outResponse.setPayload("Error : Please check the input json payload");
             outResponse.statusCode = 400;
-            _ = caller->respond(outResponse);
+            var responseResult = caller->respond(outResponse);
+            if (responseResult is error) {
+                log:printError("Error occurred while responding", err = responseResult);
+            }
             return;
         }
         string orderItems = items.toString();
@@ -129,12 +130,18 @@ service Order on orderServiceListener {
         // Call the inventory backend through the circuit breaker
         var response = circuitBreakerEP->post("/inventory", outRequest);
         if (response is http:Response) {
-            _ = caller->respond("Order Placed : " + untaint orderItems);
+            var responseResult = caller->respond("Order Placed : " + untaint orderItems);
+            if (responseResult is error) {
+                log:printError("Error occurred while responding", err = responseResult);
+            }
         } else if (response is error) {
             // If inventory backend contain errors forward the error message to client
             log:printInfo("Inventory service returns an error :" + <string>response.detail().message);
-            _ = caller->respond({ "Error": "Inventory Service did not respond",
+            var responseResult = caller->respond({ "Error": "Inventory Service did not respond",
                     "Error_message": <string>response.detail().message });
+            if (responseResult is error) {
+                log:printError("Error occurred while responding", err = responseResult);
+            }
             return;
         }
     }

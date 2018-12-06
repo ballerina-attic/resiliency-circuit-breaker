@@ -60,9 +60,11 @@ service InventoryService on inventoryListener {
             log:printInfo("Checking the order items : " + itemsList);
             // Prepare the response message
             json responseJson = { "Status": "Order Available in Inventory", "items": items };
-            response.setPayload(untaint responseJson);
             // Send the response to the client
-            _ = caller->respond(response);
+            var responseResult = caller->respond(untaint responseJson);
+            if (responseResult is error) {
+                log:printError("Error occurred while responding", err = responseResult);
+            }
         } else if (items is error) {
             log:printError("Cannot parse incoming json", err = items);
         }
