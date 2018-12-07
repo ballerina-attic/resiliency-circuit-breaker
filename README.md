@@ -310,9 +310,10 @@ In Ballerina, the unit test cases should be in the same package inside a folder 
   
 This guide contains unit test cases for each service that we implemented above. 
 
-To run the unit tests, open your terminal and navigate to `resiliency-circuit-breaker/guide`, and run the following command.
+To run the unit tests, open your terminal and navigate to `resiliency-circuit-breaker/guide`, and run the following commands.
 ```bash
-$ ballerina test
+$ ballerina test inventory_services
+$ ballerina test order_services
 ```
 
 To check the implementation of the test file, refer tests folders in the [repository](https://github.com/ballerina-guides/resiliency-circuit-breaker).
@@ -404,7 +405,7 @@ service InventoryService on inventoryListener {
 This will also create the corresponding Docker image using the Docker annotations that you have configured above. Navigate to the `<SAMPLE_ROOT>/guide/` folder and run the following command.
 
 ```
-  $ballerina build inventory_services
+  $ ballerina build inventory_services
 
   Run following command to start Docker container:
   docker run -d -p 9092:9092 ballerina.guides.io/inventory_service:v1.0
@@ -483,7 +484,7 @@ http:Client circuitBreakerEP = new("http://<IP_ADDRESS_OF_INVENTORY_SERVICE_CONT
 - Navigate to the `<SAMPLE_ROOT>/guide/` folder and run the following command.
 
 ```
-  $ballerina build order_services
+  $ ballerina build order_services --skiptests
   
   Run following command to start Docker container:
   docker run -d -p 9090:9090 ballerina.guides.io/order_service:v1.0
@@ -638,12 +639,12 @@ If you are using Minikube, you need to set a couple of additional attributes to 
 This will also create the corresponding Docker image and the Kubernetes artifacts using the Kubernetes annotations that you have configured above.
   
 ```
-  $ballerina build inventory_services
+  $ ballerina build inventory_services
 
   Run following command to deploy Kubernetes artifacts:
   kubectl apply -f target/kubernetes/inventory_services
 
-  $ballerina build order_services
+  $ ballerina build order_services
   
   Run following command to deploy Kubernetes artifacts:
   kubectl apply -f target/kubernetes/order_services
@@ -668,10 +669,10 @@ This will also create the corresponding Docker image and the Kubernetes artifact
 ```
 - You can verify Kubernetes deployment, service and ingress are running properly, by using following Kubernetes commands. 
 ```
-$kubectl get service
-$kubectl get deploy
-$kubectl get pods
-$kubectl get ingress
+$ kubectl get service
+$ kubectl get deploy
+$ kubectl get pods
+$ kubectl get ingress
 
 ```
 
