@@ -134,7 +134,7 @@ service Order on orderServiceListener {
             if (responseResult is error) {
                 log:printError("Error occurred while responding", err = responseResult);
             }
-        } else if (response is error) {
+        } else {
             // If inventory backend contain errors forward the error message to client
             log:printInfo("Inventory service returns an error :" + <string>response.detail().message);
             var responseResult = caller->respond({ "Error": "Inventory Service did not respond",

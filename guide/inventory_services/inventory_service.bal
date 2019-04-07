@@ -65,7 +65,7 @@ service InventoryService on inventoryListener {
             if (responseResult is error) {
                 log:printError("Error occurred while responding", err = responseResult);
             }
-        } else if (items is error) {
+        } else {
             log:printError("Cannot parse incoming json", err = items);
         }
     }
