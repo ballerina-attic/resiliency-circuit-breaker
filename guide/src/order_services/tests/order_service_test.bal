@@ -18,6 +18,7 @@ import ballerina/io;
 import ballerina/http;
 import ballerina/test;
 import ballerina/log;
+import ballerina/'lang\.string as langlib_string;
 
 http:Client httpEndpoint = new("http://localhost:9090/order");
 
@@ -38,10 +39,12 @@ function afterFunction() {
 function testOrderService() {
     // Initialize the empty http request and response
     http:Request request = new;
+
     // Test the inventory resource
     // Prepare order with sample items
     json requestJson = { "items": { "1": "Basket", "2": "Table", "3": "Chair" } };
-    request.setJsonPayload(untaint requestJson);
+    request.setJsonPayload(<@untainted json> requestJson);
+
     // Send the request to service and get the response
     var response = httpEndpoint->post("/", request);
     if (response is http:Response) {
@@ -52,6 +55,8 @@ function testOrderService() {
             "Inventory service didnot respond with 200 OK signal");
             test:assertEquals(jsonResponse.Error.toString(), "Inventory Service did not respond",
             msg = " Error respond mismatch");
+            test:assertEquals(jsonResponse.Error_message.toString(), "Something wrong with the connection",
+            msg = " Error message mismatch");
         } else {
             test:assertFail(msg = "Failed to parse response:");
         }
@@ -70,12 +75,9 @@ function testOrderService() {
             "Inventory service didn't respond with 200 OK signal");
             test:assertEquals(jsonResponse.Error.toString(), "Inventory Service did not respond",
             msg = " Error respond mismatch");
-
-            // Assert Circuit Breaker response
-            //boolean result = jsonResponse.Error_message.toString().contains("Upstream
-            //service unavailable") but {error => false};
-            test:assertTrue(true, msg = " Error message mismatch");
-            io:println("test");
+            test:assertTrue(langlib_string:startsWith(jsonResponse.Error_message.toString(), 
+                            "Upstream service unavailable. Requests to upstream service will be suspended"),
+                            msg = " Error message mismatch");
         }else {
             test:assertFail(msg = "Failed to parse response:");
         }

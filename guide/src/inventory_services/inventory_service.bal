@@ -53,15 +53,18 @@ service InventoryService on inventoryListener {
     resource function inventoryResource(http:Caller caller, http:Request request) {
         // Initialize the response message that needs to send back to client
         http:Response response = new;
+
         // Extract the items list from the request JSON payload
-        var items = json.convert(request.getJsonPayload());
+        var items = request.getJsonPayload();
         if (items is json) {
             string itemsList = items.toString();
             log:printInfo("Checking the order items : " + itemsList);
+
             // Prepare the response message
             json responseJson = { "Status": "Order Available in Inventory", "items": items };
+
             // Send the response to the client
-            var responseResult = caller->respond(untaint responseJson);
+            var responseResult = caller->respond(<@untainted json> responseJson);
             if (responseResult is error) {
                 log:printError("Error occurred while responding", err = responseResult);
             }
