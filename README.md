@@ -324,7 +324,7 @@ Once you are done with the development, you can deploy the service using any of 
 
 ### Deploying locally
 
-- As the first step, you can build a Ballerina executable archive (.balx) of the services that we developed above. Navigate to `resiliency-circuit-breaker/guide` and run the following commands. 
+- As the first step, you can build a Ballerina executable (.jar) of the services that we developed above. Navigate to `resiliency-circuit-breaker/guide` and run the following commands. 
 ```
    $ ballerina build order_services
 ```
@@ -332,13 +332,13 @@ Once you are done with the development, you can deploy the service using any of 
    $ ballerina build inventory_services
 ```
 
-- Once the .balx files are created inside the target folder, navigate to the target folder and run them with the following commands. 
+- Once the .jar files are created inside the target/tmp folder, navigate to the target folder and run them with the following commands. 
 
 ```
-   $ ballerina run order_services.balx
+   $ ballerina run order_services.jar
 ```
 ```
-   $ ballerina run inventory_services.balx
+   $ ballerina run inventory_services.jar
 ```
 
 - The successful execution of the service will show us the following output. 
@@ -401,7 +401,7 @@ service InventoryService on inventoryListener {
 
 ```
 
-- Now you can build a Ballerina executable archive (.balx) of the service that we developed above, using the following command. It points to the service file that we developed above and it will create an executable binary out of that. 
+- Now you can build a Ballerina executable archive (.jar) of the service that we developed above, using the following command. It points to the service file that we developed above and it will create an executable binary out of that. 
 This will also create the corresponding Docker image using the Docker annotations that you have configured above. Navigate to the `<SAMPLE_ROOT>/guide/` folder and run the following command.
 
 ```
