@@ -45,17 +45,16 @@ import ballerina/http;
 //@docker:Expose{}
 listener http:Listener orderServiceListener = new(9090);
 
-http:Client circuitBreakerEP = new("http://localhost:9092", config = {
+http:Client circuitBreakerEP = new("http://localhost:9092", {
         // The 'circuitBreaker' term incorporate circuit breaker pattern to the client endpoint
         // Circuit breaker will immediately drop remote calls if the endpoint exceeded the failure threshold
         circuitBreaker: {
             // Failure calculation window. This is how long Ballerina
             // circuit breaker keeps the statistics for the operations.
             rollingWindow: {
-
                 // Time period in milliseconds for which the failure threshold
                 // is calculated.
-                timeWindowMillis: 10000,
+                timeWindowInMillis: 10000,
 
                 // The granularity at which the time window slides.
                 // This is measured in milliseconds.
@@ -66,7 +65,7 @@ http:Client circuitBreakerEP = new("http://localhost:9092", config = {
                 // RollingWindow breaks into sub windows with
                 // 2-second buckets and stats are collected with
                 // respect to the buckets
-                bucketSizeMillis: 2000,
+                bucketSizeInMillis: 2000,
 
                 // Minimum number of requests in a `RollingWindow`
                 // that will trip the circuit.
@@ -85,13 +84,13 @@ http:Client circuitBreakerEP = new("http://localhost:9092", config = {
             // `OPEN` state. Once the circuit is in `OPEN` state
             // circuit breaker waits for the time configured in `resetTimeMillis`
             // and switch the circuit to the `HALF_OPEN` state.
-            resetTimeMillis: 10000,
+            resetTimeInMillis: 10000,
 
             // HTTP response status codes that are considered as failures
             statusCodes: [400, 404, 500]
 
         },
-        timeoutMillis: 2000
+        timeoutInMillis: 2000
     });
 
 @http:ServiceConfig {
@@ -106,43 +105,51 @@ service Order on orderServiceListener {
         // Initialize the request and response message to send to the inventory service
         http:Request outRequest = new;
         http:Response inResponse = new;
+
         // Initialize the response message to send back to client
         // Extract the items from the json payload
         var result = request.getJsonPayload();
         json items;
-        if (result is json) {
-            items = result.items;
+        if (result is json && result.items is json) {
+            items = <json>result.items;
         } else {
-            http:Response outResponse = new;
             // Send bad request message to the client if request don't contain order items
-            outResponse.setPayload("Error : Please check the input json payload");
-            outResponse.statusCode = 400;
-            var responseResult = caller->respond(outResponse);
-            if (responseResult is error) {
-                log:printError("Error occurred while responding", err = responseResult);
-            }
+            sendErrorResponse(caller);
             return;
         }
+
         string orderItems = items.toString();
         log:printInfo("Recieved Order : " + orderItems);
+
         // Set the outgoing request JSON payload with items
-        outRequest.setPayload(untaint items);
+        outRequest.setPayload(<@untainted json> items);
+
         // Call the inventory backend through the circuit breaker
         var response = circuitBreakerEP->post("/inventory", outRequest);
         if (response is http:Response) {
-            var responseResult = caller->respond("Order Placed : " + untaint orderItems);
+            var responseResult = caller->respond("Order Placed : " + <@untainted string> orderItems);
             if (responseResult is error) {
                 log:printError("Error occurred while responding", err = responseResult);
             }
         } else {
             // If inventory backend contain errors forward the error message to client
-            log:printInfo("Inventory service returns an error :" + <string>response.detail().message);
+            log:printInfo("Inventory service returns an error :" + <string>response.detail()["message"]);
             var responseResult = caller->respond({ "Error": "Inventory Service did not respond",
-                    "Error_message": <string>response.detail().message });
+                    "Error_message": <string>response.detail()["message"] });
             if (responseResult is error) {
                 log:printError("Error occurred while responding", err = responseResult);
             }
             return;
         }
+    }
+}
+
+function sendErrorResponse(http:Caller caller) {
+    http:Response outResponse = new;
+    outResponse.setPayload("Error : Please check the input json payload");
+    outResponse.statusCode = 400;
+    var responseResult = caller->respond(outResponse);
+    if (responseResult is error) {
+        log:printError("Error occurred while responding", err = responseResult);
     }
 }
